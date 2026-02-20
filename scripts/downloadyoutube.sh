@@ -32,12 +32,18 @@ $(tput bold)OPTIONS$(tput sgr0)
     -h, --help                  Show this help message
 
     --update                    Self-update this script to the latest version
+    --update-ytdlp              Update yt-dlp to the latest version (fixes format errors)
 
 $(tput bold)EXAMPLES$(tput sgr0)
     $SCRIPT_NAME https://youtube.com/watch?v=...
     $SCRIPT_NAME -b firefox https://youtube.com/watch?v=...
     $SCRIPT_NAME -r 720 https://youtube.com/watch?v=...
     $SCRIPT_NAME -b safari -r 480 https://youtube.com/watch?v=...
+
+$(tput bold)TROUBLESHOOTING$(tput sgr0)
+    "Requested format is not available" / "n challenge solving failed"
+    → Run: $SCRIPT_NAME --update-ytdlp
+      YouTube frequently changes its player; keeping yt-dlp up to date fixes this.
 
 $(tput bold)NOTES$(tput sgr0)
     • The browser you specify must be installed and have visited the URL's site
@@ -53,7 +59,24 @@ if [[ "$1" == "--update" ]]; then
     curl -sL "$SCRIPT_URL" -o "$SCRIPT_NAME"
     chmod +x "$SCRIPT_NAME"
     sudo mv "$SCRIPT_NAME" /usr/local/bin/"$SCRIPT_NAME"
-    echo "Update complete!"
+    echo "✅  Script update complete!"
+    exit 0
+fi
+
+# ── Update yt-dlp ─────────────────────────────
+if [[ "$1" == "--update-ytdlp" ]]; then
+    echo "Updating yt-dlp..."
+    if command -v brew &>/dev/null && brew list yt-dlp &>/dev/null 2>&1; then
+        brew upgrade yt-dlp
+    elif command -v pip3 &>/dev/null && pip3 show yt-dlp &>/dev/null 2>&1; then
+        pip3 install --upgrade yt-dlp
+    elif command -v yt-dlp &>/dev/null; then
+        yt-dlp -U
+    else
+        echo "❌  yt-dlp not found. Install it with: brew install yt-dlp"
+        exit 1
+    fi
+    echo "✅  yt-dlp update complete!"
     exit 0
 fi
 
