@@ -18,7 +18,7 @@ show_help() {
 
 $(tput bold)USAGE$(tput sgr0)
     $SCRIPT_NAME [OPTIONS] <URL>
-    $SCRIPT_NAME --update
+    $SCRIPT_NAME --update <self|ytdlp>
 
 $(tput bold)OPTIONS$(tput sgr0)
     -b, --browser <browser>     Browser to pull cookies from for authenticated downloads
@@ -31,8 +31,8 @@ $(tput bold)OPTIONS$(tput sgr0)
 
     -h, --help                  Show this help message
 
-    --update                    Self-update this script to the latest version
-    --update-ytdlp              Update yt-dlp to the latest version (fixes format errors)
+    --update self               Update this script to the latest version
+    --update ytdlp              Update yt-dlp to the latest version (fixes format errors)
 
 $(tput bold)EXAMPLES$(tput sgr0)
     $SCRIPT_NAME https://youtube.com/watch?v=...
@@ -42,7 +42,7 @@ $(tput bold)EXAMPLES$(tput sgr0)
 
 $(tput bold)TROUBLESHOOTING$(tput sgr0)
     "Requested format is not available" / "n challenge solving failed"
-    → Run: $SCRIPT_NAME --update-ytdlp
+    → Run: $SCRIPT_NAME --update ytdlp
       YouTube frequently changes its player; keeping yt-dlp up to date fixes this.
 
 $(tput bold)NOTES$(tput sgr0)
@@ -53,30 +53,41 @@ $(tput bold)NOTES$(tput sgr0)
 EOF
 }
 
-# ── Self-Update ───────────────────────────────
+# ── Update ────────────────────────────────────
 if [[ "$1" == "--update" ]]; then
-    echo "Updating $SCRIPT_NAME..."
-    curl -sL "$SCRIPT_URL" -o "$SCRIPT_NAME"
-    chmod +x "$SCRIPT_NAME"
-    sudo mv "$SCRIPT_NAME" /usr/local/bin/"$SCRIPT_NAME"
-    echo "✅  Script update complete!"
-    exit 0
-fi
-
-# ── Update yt-dlp ─────────────────────────────
-if [[ "$1" == "--update-ytdlp" ]]; then
-    echo "Updating yt-dlp..."
-    if command -v brew &>/dev/null && brew list yt-dlp &>/dev/null 2>&1; then
-        brew upgrade yt-dlp
-    elif command -v pip3 &>/dev/null && pip3 show yt-dlp &>/dev/null 2>&1; then
-        pip3 install --upgrade yt-dlp
-    elif command -v yt-dlp &>/dev/null; then
-        yt-dlp -U
-    else
-        echo "❌  yt-dlp not found. Install it with: brew install yt-dlp"
-        exit 1
-    fi
-    echo "✅  yt-dlp update complete!"
+    case "$2" in
+        self)
+            echo "Updating $SCRIPT_NAME..."
+            curl -sL "$SCRIPT_URL" -o "$SCRIPT_NAME"
+            chmod +x "$SCRIPT_NAME"
+            sudo mv "$SCRIPT_NAME" /usr/local/bin/"$SCRIPT_NAME"
+            echo "✅  Script update complete!"
+            ;;
+        ytdlp)
+            echo "Updating yt-dlp..."
+            if command -v brew &>/dev/null && brew list yt-dlp &>/dev/null 2>&1; then
+                brew upgrade yt-dlp
+            elif command -v pip3 &>/dev/null && pip3 show yt-dlp &>/dev/null 2>&1; then
+                pip3 install --upgrade yt-dlp
+            elif command -v yt-dlp &>/dev/null; then
+                yt-dlp -U
+            else
+                echo "❌  yt-dlp not found. Install it with: brew install yt-dlp"
+                exit 1
+            fi
+            echo "✅  yt-dlp update complete!"
+            ;;
+        *)
+            echo "❌  Missing or invalid target for --update."
+            echo ""
+            echo "    Usage:  $SCRIPT_NAME --update <target>"
+            echo ""
+            echo "    Targets:"
+            echo "      self    — update this script"
+            echo "      ytdlp   — update yt-dlp (fixes format/n-challenge errors)"
+            exit 1
+            ;;
+    esac
     exit 0
 fi
 
