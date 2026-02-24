@@ -1,0 +1,66 @@
+#!/bin/bash
+
+# ─────────────────────────────────────────────
+#  iris — unified CLI dispatcher
+#  https://github.com/rhythwitty/bashrepo
+# ─────────────────────────────────────────────
+
+IRIS_VERSION="1.0.0"
+IRIS_LIB_DIR="/usr/local/lib/iris"
+IRIS_UPDATE_URL="https://github.com/rhythwitty/bashrepo/raw/main/install.sh"
+
+show_help() {
+    if command -v tput &>/dev/null; then
+        bold=$(tput bold); reset=$(tput sgr0)
+    else
+        bold=""; reset=""
+    fi
+
+    echo ""
+    echo "${bold}iris v${IRIS_VERSION}${reset} — utility scripts"
+    echo ""
+    echo "${bold}USAGE${reset}"
+    echo "    iris <command> [options]"
+    echo ""
+    echo "${bold}COMMANDS${reset}"
+    if [[ -d "$IRIS_LIB_DIR" ]]; then
+        for script in "$IRIS_LIB_DIR"/*.sh; do
+            [[ -f "$script" ]] || continue
+            cmd=$(basename "$script" .sh)
+            desc=$(grep -m1 '^# IRIS_DESC:' "$script" | sed 's/^# IRIS_DESC: *//')
+            printf "    %-20s %s\n" "$cmd" "${desc:----}"
+        done
+    else
+        echo "    (no commands installed — run install.sh)"
+    fi
+    echo ""
+    echo "${bold}OTHER${reset}"
+    echo "    iris --update          Update iris and all scripts"
+    echo "    iris --version         Show version"
+    echo "    iris --help            Show this help"
+    echo ""
+}
+
+case "$1" in
+    ""|--help|-h)
+        show_help
+        ;;
+    --version|-v)
+        echo "iris v${IRIS_VERSION}"
+        ;;
+    --update)
+        echo "Updating iris..."
+        curl -sL "$IRIS_UPDATE_URL" | bash
+        ;;
+    *)
+        SCRIPT="$IRIS_LIB_DIR/$1.sh"
+        if [[ -x "$SCRIPT" ]]; then
+            shift
+            exec "$SCRIPT" "$@"
+        else
+            echo "❌  Unknown command: $1"
+            echo "    Run 'iris' to see available commands."
+            exit 1
+        fi
+        ;;
+esac
