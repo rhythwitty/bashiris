@@ -1,4 +1,11 @@
 #!/bin/bash
+
+# ─────────────────────────────────────────────
+#  check-power — Mac power configuration summary
+#  https://github.com/rhythwitty/bashrepo
+# ─────────────────────────────────────────────
+# IRIS_DESC: Show Mac power, sleep, and remote login configuration
+
 echo "=== MAC POWER CONFIGURATION SUMMARY ==="
 echo ""
 echo "1. DAILY SCHEDULE:"
