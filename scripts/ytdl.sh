@@ -6,4 +6,4 @@ if [ -z "$URL" ]; then
     return 1 2>/dev/null || exit 1
 fi
 
-yt-dlp -f "bv*[vcodec^=avc]+ba[ext=m4a]/b[ext=mp4]/b" "$URL"
+yt-dlp -f "bv*[vcodec^=avc]+ba[ext=m4a]/b[ext=mp4]/b" --merge-output-format mp4 "$URL"
