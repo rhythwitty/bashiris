@@ -8,6 +8,8 @@ A unified CLI for utility scripts. Works on macOS and Linux.
 curl -sL https://github.com/rhythwitty/bashrepo/raw/main/install.sh | bash
 ```
 
+The installer detects your OS and only installs compatible scripts.
+
 ## Usage
 
 ```bash
@@ -19,7 +21,14 @@ iris --version          # show version
 
 ## Commands
 
-### check-power
+| Command | macOS | Linux | Description |
+|---|---|---|---|
+| `check-power` | ✅ | ❌ | Show power, sleep, and remote login config |
+| `download-yt` | ✅ | ✅ | Download YouTube videos via yt-dlp |
+| `kill-port`   | ✅ | ✅ | Kill the process running on a given port |
+| `setup-ssh`   | ✅ | ✅ | Generate SSH keys and configure GitHub access |
+
+### check-power _(macOS only)_
 ```bash
 iris check-power
 ```
@@ -45,6 +54,6 @@ iris setup-ssh
 
 ## Adding a new command
 
-1. Add a script to `scripts/<command-name>.sh`
-2. Include `# IRIS_DESC: <short description>` near the top
-3. Add the command name to the `SCRIPTS` array in `install.sh`
+1. Create `scripts/<command-name>.sh` with `# IRIS_DESC: <description>` near the top
+2. Add `# IRIS_PLATFORM: macos` if macOS-only; omit for cross-platform
+3. Add the command name to `SCRIPTS_COMMON` or `SCRIPTS_MACOS` in `install.sh`
