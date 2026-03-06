@@ -8,6 +8,7 @@
 IRIS_VERSION="1.0.0"
 IRIS_LIB_DIR="/usr/local/lib/iris"
 IRIS_UPDATE_URL="https://github.com/rhythwitty/bashrepo/raw/main/install.sh"
+IRIS_RAW_URL="https://github.com/rhythwitty/bashrepo/raw/main/iris"
 
 show_help() {
     if command -v tput &>/dev/null; then
@@ -36,6 +37,7 @@ show_help() {
     echo ""
     echo "${bold}OTHER${reset}"
     echo "    iris --update          Update iris and all scripts"
+    echo "    iris --upgrade         Alias for --update"
     echo "    iris --version         Show version"
     echo "    iris --help            Show this help"
     echo ""
@@ -48,8 +50,20 @@ case "$1" in
     --version|-v)
         echo "iris v${IRIS_VERSION}"
         ;;
-    --update)
-        echo "Updating iris..."
+    --update|--upgrade)
+        echo "Checking for updates..."
+        REMOTE_VERSION=$(curl -sL "$IRIS_RAW_URL" | grep -m1 '^IRIS_VERSION=' | cut -d'"' -f2)
+        
+        if [[ -z "$REMOTE_VERSION" ]]; then
+            echo "⚠️  Could not check remote version. Proceeding with update..."
+        elif [[ "$IRIS_VERSION" == "$REMOTE_VERSION" ]]; then
+            echo "✅  iris is already up to date (v${IRIS_VERSION})."
+            exit 0
+        else
+            echo "🔄  New version available: v${IRIS_VERSION} → v${REMOTE_VERSION}"
+        fi
+
+        echo "Updating iris and scripts..."
         curl -sL "$IRIS_UPDATE_URL" | bash
         ;;
     *)
