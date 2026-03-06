@@ -1,12 +1,12 @@
 #!/bin/bash
 
 # ─────────────────────────────────────────────
-#  killport — Safely terminate process on port
+#  kill-port — Safely terminate process on port
 # ─────────────────────────────────────────────
 
 # Check if port number provided
 if [ -z "$1" ]; then
-    echo "Usage: killport <port_number>"
+    echo "Usage: kill-port <port_number>"
     exit 1
 fi
 
