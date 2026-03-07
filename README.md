@@ -1,24 +1,24 @@
 # How to Install
 
 ```bash
-# Install downloadyoutube
-curl -sL https://github.com/rhythwitty/bashrepo/raw/main/scripts/downloadyoutube.sh -o downloadyoutube && chmod +x downloadyoutube && sudo mv downloadyoutube /usr/local/bin/downloadyoutube
+# Install download-yt
+curl -sL https://github.com/rhythwitty/bashrepo/raw/main/scripts/download-yt.sh -o download-yt && chmod +x download-yt && sudo mv download-yt /usr/local/bin/download-yt
 
-# Install killport
-curl -sL https://github.com/rhythwitty/bashrepo/raw/main/scripts/killport.sh -o killport && chmod +x killport && sudo mv killport /usr/local/bin/killport
+# Install kill-port
+curl -sL https://github.com/rhythwitty/bashrepo/raw/main/scripts/kill-port.sh -o kill-port && chmod +x kill-port && sudo mv kill-port /usr/local/bin/kill-port
 ```
 
 Then to use:
 
-### downloadyoutube
+### download-yt
 ```bash
-downloadyoutube --update <self|ytdlp>
-downloadyoutube https://youtube.com/watch?v=...           # chrome, 1080p
-downloadyoutube -b firefox -r 720 https://...            # firefox, 720p
-downloadyoutube --browser safari --resolution 480 https://...
+download-yt --update <self|ytdlp>
+download-yt https://youtube.com/watch?v=...           # chrome, 1080p
+download-yt -b firefox -r 720 https://...            # firefox, 720p
+download-yt --browser safari --resolution 480 https://...
 ```
 
-### killport
+### kill-port
 ```bash
-killport <port_number>
+kill-port <port_number>
 ```
