@@ -39,7 +39,8 @@ Every script in `scripts/` must include these metadata comments near the top (af
 ```
 iris                 →  show_help() — scans IRIS_LIB_DIR/*.sh, reads IRIS_DESC per script
 iris --version       →  print IRIS_VERSION
-iris --update        →  curl install.sh from GitHub | bash
+iris --update        →  checks IRIS_VERSION against GitHub; curls install.sh if newer
+iris --upgrade       →  alias for --update
 iris <command> [args]
   1. Resolve IRIS_LIB_DIR/<command>.sh
   2. Read IRIS_PLATFORM tag; exit 1 if platform mismatch
@@ -53,6 +54,7 @@ Key variables in `iris`:
 | `IRIS_VERSION`    | Current semver string (e.g. `1.0.0`)           |
 | `IRIS_LIB_DIR`    | `/usr/local/lib/iris`                           |
 | `IRIS_UPDATE_URL` | GitHub raw URL to `install.sh`                  |
+| `IRIS_RAW_URL`    | GitHub raw URL to `iris` dispatcher             |
 
 ## Installer Logic (`install.sh`)
 
