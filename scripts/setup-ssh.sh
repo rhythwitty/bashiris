@@ -1,5 +1,11 @@
 #!/bin/bash
 
+# ─────────────────────────────────────────────
+#  setup-ssh — Generate SSH keys and configure GitHub access
+#  https://github.com/rhythwitty/bashrepo
+# ─────────────────────────────────────────────
+# IRIS_DESC: Generate SSH keys and configure GitHub access
+
 # Colors for output
 GREEN='\033[0;32m'
 BLUE='\033[0;34m'

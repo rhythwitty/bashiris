@@ -3,6 +3,7 @@
 # ─────────────────────────────────────────────
 #  kill-port — Safely terminate process on port
 # ─────────────────────────────────────────────
+# IRIS_DESC: Safely terminate the process running on a given port
 
 # Check if port number provided
 if [ -z "$1" ]; then
