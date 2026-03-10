@@ -8,16 +8,28 @@
 REPO_URL="https://github.com/rhythwitty/bashrepo/raw/main"
 IRIS_BIN="/usr/local/bin/iris"
 IRIS_LIB="/usr/local/lib/iris"
+PLATFORM=$(uname -s)
 
-SCRIPTS=(
-    check-power
+# Cross-platform scripts (macOS + Linux)
+SCRIPTS_COMMON=(
     download-yt
     kill-port
     setup-ssh
 )
 
+# macOS-only scripts
+SCRIPTS_MACOS=(
+    check-power
+)
+
+# Build final script list for this platform
+SCRIPTS=("${SCRIPTS_COMMON[@]}")
+if [[ "$PLATFORM" == "Darwin" ]]; then
+    SCRIPTS+=("${SCRIPTS_MACOS[@]}")
+fi
+
 echo ""
-echo "Installing iris..."
+echo "Installing iris on $PLATFORM..."
 echo ""
 
 # Create lib dir
