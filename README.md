@@ -1,24 +1,50 @@
-# How to Install
+# iris
+
+A unified CLI for utility scripts. Works on macOS and Linux.
+
+## Install
 
 ```bash
-# Install download-yt
-curl -sL https://github.com/rhythwitty/bashrepo/raw/main/scripts/download-yt.sh -o download-yt && chmod +x download-yt && sudo mv download-yt /usr/local/bin/download-yt
-
-# Install kill-port
-curl -sL https://github.com/rhythwitty/bashrepo/raw/main/scripts/kill-port.sh -o kill-port && chmod +x kill-port && sudo mv kill-port /usr/local/bin/kill-port
+curl -sL https://github.com/rhythwitty/bashrepo/raw/main/install.sh | bash
 ```
 
-Then to use:
+## Usage
+
+```bash
+iris                    # list available commands
+iris <command> [args]   # run a command
+iris --update           # update iris and all scripts
+iris --version          # show version
+```
+
+## Commands
+
+### check-power
+```bash
+iris check-power
+```
 
 ### download-yt
 ```bash
-download-yt --update <self|ytdlp>
-download-yt https://youtube.com/watch?v=...           # chrome, 1080p
-download-yt -b firefox -r 720 https://...            # firefox, 720p
-download-yt --browser safari --resolution 480 https://...
+iris download-yt https://youtube.com/watch?v=...
+iris download-yt -b firefox -r 720 https://...
+iris download-yt --browser safari --resolution 480 https://...
+iris download-yt --update ytdlp
+iris download-yt --help
 ```
 
 ### kill-port
 ```bash
-kill-port <port_number>
+iris kill-port <port_number>
 ```
+
+### setup-ssh
+```bash
+iris setup-ssh
+```
+
+## Adding a new command
+
+1. Add a script to `scripts/<command-name>.sh`
+2. Include `# IRIS_DESC: <short description>` near the top
+3. Add the command name to the `SCRIPTS` array in `install.sh`
