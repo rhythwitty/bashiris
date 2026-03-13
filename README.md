@@ -58,3 +58,9 @@ iris setup-ssh
 1. Create `scripts/<command-name>.sh` with `# IRIS_DESC: <description>` near the top
 2. Add `# IRIS_PLATFORM: macos` if macOS-only; omit for cross-platform
 3. Add the command name to `SCRIPTS_COMMON` or `SCRIPTS_MACOS` in `install.sh`
+
+## Releasing
+
+Version management and releases are automated using **Conventional Commits** and **GitHub Actions**.
+
+See [RELEASING.md](./RELEASING.md) for detailed instructions on how to bump versions and publish new releases.

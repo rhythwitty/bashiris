@@ -18,6 +18,7 @@ This file helps AI coding assistants understand the structure, conventions, and 
 │   ├── kill-port.sh     (cross-platform)
 │   └── setup-ssh.sh     (cross-platform)
 ├── README.md
+├── RELEASING.md      # Automated release instructions
 └── AGENTS.md         # This file
 ```
 
