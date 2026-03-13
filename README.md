@@ -15,7 +15,8 @@ The installer detects your OS and only installs compatible scripts.
 ```bash
 iris                    # list available commands
 iris <command> [args]   # run a command
-iris --update           # update iris and all scripts
+iris --update           # update iris and all scripts (checks version first)
+iris --upgrade          # alias for --update
 iris --version          # show version
 ```
 
