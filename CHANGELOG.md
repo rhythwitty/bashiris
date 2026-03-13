@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.1.0](https://github.com/rhythwitty/bashrepo/compare/v1.0.0...v1.1.0) (2026-05-09)
+
+
+### Features
+
+* documentation on Conventional Commits ([7947acf](https://github.com/rhythwitty/bashrepo/commit/7947acf1850eb94c855f5376de88c8882e23d0c7))
+
 ## 1.0.0 (2026-05-09)
 
 
