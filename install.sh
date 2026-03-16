@@ -14,7 +14,8 @@ PLATFORM=$(uname -s)
 SCRIPTS_COMMON=(
     download-yt
     kill-port
-    setup-ssh
+    ssh/setup-ssh
+    ssh/verify-ssh
 )
 
 # macOS-only scripts
@@ -43,10 +44,11 @@ sudo mv /tmp/iris_dispatcher "$IRIS_BIN"
 
 # Install scripts
 for script in "${SCRIPTS[@]}"; do
-    echo "  → $script"
-    curl -sL "$REPO_URL/scripts/$script.sh" -o /tmp/"iris_${script}.sh"
-    chmod +x /tmp/"iris_${script}.sh"
-    sudo mv /tmp/"iris_${script}.sh" "$IRIS_LIB/$script.sh"
+    script_name=$(basename "$script")
+    echo "  → $script_name"
+    curl -sL "$REPO_URL/scripts/$script.sh" -o /tmp/"iris_${script_name}.sh"
+    chmod +x /tmp/"iris_${script_name}.sh"
+    sudo mv /tmp/"iris_${script_name}.sh" "$IRIS_LIB/$script_name.sh"
 done
 
 echo ""
