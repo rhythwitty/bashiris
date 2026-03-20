@@ -1,5 +1,17 @@
 # Changelog
 
+## [1.3.0](https://github.com/rhythwitty/bashrepo/compare/v1.2.0...v1.3.0) (2026-05-09)
+
+
+### Features
+
+* iris self-update script ([2852635](https://github.com/rhythwitty/bashrepo/commit/28526354425b8539b5ae85a85263ed0cf19527fd))
+
+
+### Bug Fixes
+
+* self update script ([6c4bf4b](https://github.com/rhythwitty/bashrepo/commit/6c4bf4b01a53ff596c1eec1d56f035eaecef4d6d))
+
 ## [1.2.0](https://github.com/rhythwitty/bashrepo/compare/v1.1.1...v1.2.0) (2026-05-09)
 
 
