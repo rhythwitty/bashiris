@@ -91,9 +91,8 @@ The `iris` dispatcher reads the version in this order:
 
 1. `.release-please-manifest.json` next to the dispatcher, useful when running from a checked-out repo.
 2. `/usr/local/lib/iris/.release-please-manifest.json`, installed by `install.sh`.
-3. `IRIS_VERSION` inside `iris`, only as a fallback if no manifest is available.
 
-Because of this, `IRIS_VERSION` in `iris` is not the release source of truth. It is a defensive fallback for unusual installs or missing manifest files.
+There is no separate version constant in `iris`. If the manifest is missing, `iris --version` fails with a clear error instead of reporting a stale fallback version.
 
 ## Self-Update Workflow
 
@@ -120,4 +119,4 @@ iris --upgrade
 
 - **The Release PR didn't update?** Ensure your commits follow the `type: message` format exactly.
 - **`iris --upgrade` says already up to date unexpectedly**: Check the version in the remote `.release-please-manifest.json` on `main`. That is the version the updater compares against.
-- **Manual Overrides**: If you ever need to manually adjust the version, update `.release-please-manifest.json`. Do not use `IRIS_VERSION` as the normal release version source.
+- **Manual Overrides**: If you ever need to manually adjust the version, update `.release-please-manifest.json`.
