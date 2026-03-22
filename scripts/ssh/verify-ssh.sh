@@ -34,8 +34,8 @@ USAGE
     verify-ssh
 
 DESCRIPTION
-    Scans ~/.ssh/config for GitHub host aliases (Host github_*) and runs
-    ssh -T git@<host> to verify that each SSH key and host alias are working.
+    Scans ~/.ssh/config for GitHub host entries (Host github_* and Host github.com)
+    and runs ssh -T git@<host> to verify that each SSH key and host alias are working.
 
 EXAMPLES
     verify-ssh
@@ -138,6 +138,9 @@ collect_hosts() {
                             continue
                             ;;
                         github_*)
+                            add_host "$alias"
+                            ;;
+                        github.com)
                             add_host "$alias"
                             ;;
                     esac
