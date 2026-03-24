@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.1.1](https://github.com/rhythwitty/bashrepo/compare/v1.1.0...v1.1.1) (2026-05-09)
+
+
+### Bug Fixes
+
+* RED color variable in ssh setup script ([01af65a](https://github.com/rhythwitty/bashrepo/commit/01af65a30c0e505ae1246c80738c5a54a1e488cf))
+
 ## [1.1.0](https://github.com/rhythwitty/bashrepo/compare/v1.0.0...v1.1.0) (2026-05-09)
 
 
