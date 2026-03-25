@@ -1,12 +1,12 @@
 #!/bin/bash
 
 # ─────────────────────────────────────────────
-#  downloadyoutube — yt-dlp wrapper
+#  download-yt — yt-dlp wrapper
 #  https://github.com/rhythwitty/bashrepo
 # ─────────────────────────────────────────────
 
-SCRIPT_NAME="downloadyoutube"
-SCRIPT_URL="https://github.com/rhythwitty/bashrepo/raw/main/scripts/downloadyoutube.sh"
+SCRIPT_NAME="download-yt"
+SCRIPT_URL="https://github.com/rhythwitty/bashrepo/raw/main/scripts/download-yt.sh"
 
 # ── Defaults ──────────────────────────────────
 DEFAULT_BROWSER="chrome"
