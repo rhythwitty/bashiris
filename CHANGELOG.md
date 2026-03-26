@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.4.1](https://github.com/rhythwitty/bashrepo/compare/v1.4.0...v1.4.1) (2026-05-09)
+
+
+### Bug Fixes
+
+* fix playlist donwload with `-p` ([bff2fe0](https://github.com/rhythwitty/bashrepo/commit/bff2fe0b2001e7ed60576475b26f8170c16dcc60))
+* youtube URL automatically clean ([751bf99](https://github.com/rhythwitty/bashrepo/commit/751bf99bc983a5d68fa6cd6ea385fb07b8f484e3))
+
 ## [1.4.0](https://github.com/rhythwitty/bashrepo/compare/v1.3.0...v1.4.0) (2026-05-09)
 
 
