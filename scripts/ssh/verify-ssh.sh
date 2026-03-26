@@ -30,17 +30,38 @@ summary_border() {
 
 show_help() {
     cat <<EOF
-USAGE
-    verify-ssh
 
-DESCRIPTION
+$(tput bold)USAGE$(tput sgr0)
+    verify-ssh [OPTIONS]
+
+$(tput bold)DESCRIPTION$(tput sgr0)
     Scans ~/.ssh/config for GitHub host entries (Host github_* and Host github.com)
     and runs ssh -T git@<host> to verify that each SSH key and host alias are working.
 
-EXAMPLES
+$(tput bold)OPTIONS$(tput sgr0)
+    -h, --help      Show this help message
+
+$(tput bold)EXAMPLES$(tput sgr0)
     verify-ssh
+    iris verify-ssh
+
 EOF
 }
+
+while [[ $# -gt 0 ]]; do
+    case "$1" in
+        -h|--help)
+            show_help
+            exit 0
+            ;;
+        *)
+            echo "❌  Unknown option: $1"
+            echo "    Run 'verify-ssh --help' for usage."
+            exit 1
+            ;;
+    esac
+    shift
+done
 
 add_host() {
     local candidate="$1"
@@ -178,11 +199,6 @@ verify_host() {
     FAILED=$((FAILED + 1))
     return 1
 }
-
-if [[ "$1" == "-h" || "$1" == "--help" ]]; then
-    show_help
-    exit 0
-fi
 
 if [[ ! -f "$CONFIG_FILE" ]]; then
     echo "❌  SSH config not found: $CONFIG_FILE"
