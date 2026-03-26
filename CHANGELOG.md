@@ -1,5 +1,18 @@
 # Changelog
 
+## [1.4.0](https://github.com/rhythwitty/bashrepo/compare/v1.3.0...v1.4.0) (2026-05-09)
+
+
+### Features
+
+* add a seperate Uninstall script ([ee8efce](https://github.com/rhythwitty/bashrepo/commit/ee8efce42066d4794f02e95a2b2fe215c641f8b3))
+* auto postfix gmail ([7ae169c](https://github.com/rhythwitty/bashrepo/commit/7ae169c69ccf33ced70bea981777b280ad02a435))
+
+
+### Bug Fixes
+
+* HOST ([f161806](https://github.com/rhythwitty/bashrepo/commit/f16180607b7e275503830c22d0aa1dc4fbc7238c))
+
 ## [1.3.0](https://github.com/rhythwitty/bashrepo/compare/v1.2.0...v1.3.0) (2026-05-09)
 
 
