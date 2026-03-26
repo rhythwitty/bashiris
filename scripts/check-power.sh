@@ -7,13 +7,35 @@
 # IRIS_DESC: Show Mac power, sleep, and remote login configuration
 # IRIS_PLATFORM: macos
 
-if [[ "$1" == "-h" || "$1" == "--help" ]]; then
-    echo "USAGE: check-power"
-    echo ""
-    echo "Shows Mac power, sleep, and remote login configuration."
-    echo "Note: section 5 (remote login status) requires sudo."
-    exit 0
-fi
+show_help() {
+    cat <<EOF
+
+$(tput bold)USAGE$(tput sgr0)
+    check-power [OPTIONS]
+
+$(tput bold)DESCRIPTION$(tput sgr0)
+    Shows Mac power, sleep, and remote login configuration.
+    Note: section 5 (remote login status) requires sudo.
+
+$(tput bold)OPTIONS$(tput sgr0)
+    -h, --help      Show this help message
+
+EOF
+}
+
+while [[ $# -gt 0 ]]; do
+    case "$1" in
+        -h|--help)
+            show_help
+            exit 0
+            ;;
+        *)
+            echo "❌  Unknown option: $1"
+            echo "    Run 'check-power --help' for usage."
+            exit 1
+            ;;
+    esac
+done
 
 echo "=== MAC POWER CONFIGURATION SUMMARY ==="
 echo ""
