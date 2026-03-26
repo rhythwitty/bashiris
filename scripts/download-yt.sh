@@ -30,6 +30,7 @@ $(tput bold)OPTIONS$(tput sgr0)
                                 Choices: 480, 720, 1080
                                 Default: ${DEFAULT_MAX_RES}p
 
+    -p, --playlist              Allow downloading entire playlists if URL points to one
     -h, --help                  Show this help message
 
     --update self               Update this script to the latest version
@@ -39,6 +40,7 @@ $(tput bold)EXAMPLES$(tput sgr0)
     $SCRIPT_NAME 'https://youtube.com/watch?v=...'
     $SCRIPT_NAME -b firefox 'https://youtube.com/watch?v=...'
     $SCRIPT_NAME -r 720 'https://youtube.com/watch?v=...'
+    $SCRIPT_NAME -p 'https://youtube.com/playlist?list=...'
     $SCRIPT_NAME -b safari -r 480 'https://youtube.com/watch?v=...'
 
 $(tput bold)TROUBLESHOOTING$(tput sgr0)
@@ -100,6 +102,7 @@ fi
 BROWSER="$DEFAULT_BROWSER"
 MAX_RES="$DEFAULT_MAX_RES"
 URL=""
+ALLOW_PLAYLIST=false
 
 while [[ $# -gt 0 ]]; do
     case "$1" in
@@ -114,6 +117,10 @@ while [[ $# -gt 0 ]]; do
         -r|--resolution)
             MAX_RES="$2"
             shift 2
+            ;;
+        -p|--playlist)
+            ALLOW_PLAYLIST=true
+            shift
             ;;
         -*)
             echo "❌  Unknown option: $1"
@@ -168,10 +175,22 @@ FORMAT="bv*[vcodec^=avc][height<=${MAX_RES}]+ba[ext=m4a]/b[ext=mp4][height<=${MA
 echo "⬇️   Downloading:  $URL"
 echo "🌐  Browser:       $BROWSER"
 echo "📐  Max res:       ${MAX_RES}p"
+
+if [ "$ALLOW_PLAYLIST" = true ]; then
+    echo "📜  Playlist:      enabled"
+else
+    echo "📜  Playlist:      disabled (single video)"
+fi
 echo ""
+
+PLAYLIST_FLAG="--no-playlist"
+if [ "$ALLOW_PLAYLIST" = true ]; then
+    PLAYLIST_FLAG="--yes-playlist"
+fi
 
 yt-dlp \
     --cookies-from-browser "$BROWSER" \
     -f "$FORMAT" \
     --merge-output-format mp4 \
+    $PLAYLIST_FLAG \
     "$URL"
