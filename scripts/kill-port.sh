@@ -13,7 +13,7 @@ $(tput bold)USAGE$(tput sgr0)
 
 $(tput bold)DESCRIPTION$(tput sgr0)
     Finds and terminates the process(es) listening on the given port.
-    Attempts SIGTERM first, escalates to SIGKILL if the process survives.
+    Sends SIGTERM first and escalates to SIGKILL if the process survives.
 
 $(tput bold)OPTIONS$(tput sgr0)
     -h, --help      Show this help message
