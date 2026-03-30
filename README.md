@@ -28,6 +28,7 @@ iris --version          # show version
 | `download-yt` | ✅ | ✅ | Download YouTube videos via yt-dlp |
 | `kill-port`   | ✅ | ✅ | Kill the process running on a given port |
 | `setup-ssh`   | ✅ | ✅ | Generate SSH keys and configure GitHub access |
+| `verify-ssh`  | ✅ | ✅ | Verify GitHub SSH host aliases from `~/.ssh/config` |
 
 ### check-power _(macOS only)_
 ```bash
@@ -53,11 +54,17 @@ iris kill-port <port_number>
 iris setup-ssh
 ```
 
+### verify-ssh
+```bash
+iris verify-ssh
+```
+
 ## Adding a new command
 
 1. Create `scripts/<command-name>.sh` with `# IRIS_DESC: <description>` near the top
 2. Add `# IRIS_PLATFORM: macos` if macOS-only; omit for cross-platform
-3. Add the command name to `SCRIPTS_COMMON` or `SCRIPTS_MACOS` in `install.sh`
+3. If you want to group related commands, use a subfolder like `scripts/ssh/<command>.sh`
+4. Add the command name to `SCRIPTS_COMMON` or `SCRIPTS_MACOS` in `install.sh`
 
 ## Releasing
 
