@@ -8,7 +8,7 @@
 
 CONFIG_FILE="${HOME}/.ssh/config"
 
-if command -v tput &>/dev/null; then
+if command -v tput &> /dev/null; then
     BOLD=$(tput bold)
     RESET=$(tput sgr0)
     GREEN=$(tput setaf 2)
@@ -29,7 +29,7 @@ summary_border() {
 }
 
 show_help() {
-    cat <<EOF
+    cat << EOF
 
 $(tput bold)USAGE$(tput sgr0)
     verify-ssh [OPTIONS]
@@ -50,7 +50,7 @@ EOF
 
 while [[ $# -gt 0 ]]; do
     case "$1" in
-        -h|--help)
+        -h | --help)
             show_help
             exit 0
             ;;
@@ -145,7 +145,7 @@ collect_hosts() {
 
     while IFS= read -r line || [[ -n "$line" ]]; do
         case "$line" in
-            ''|[[:space:]]*#)
+            '' | [[:space:]]*#)
                 continue
                 ;;
         esac
@@ -176,10 +176,10 @@ verify_host() {
     local status
     local classification
 
-    ssh -T -o BatchMode=yes -o ConnectTimeout=10 "git@$host" >/tmp/iris_verify_ssh.$$ 2>&1
+    ssh -T -o BatchMode=yes -o ConnectTimeout=10 "git@$host" > /tmp/iris_verify_ssh.$$ 2>&1
     status=$?
     output=$(cat /tmp/iris_verify_ssh.$$)
-    rm -f /tmp/iris_verify_ssh.$$ 
+    rm -f /tmp/iris_verify_ssh.$$
 
     classification=$(classify_output "$output")
 
