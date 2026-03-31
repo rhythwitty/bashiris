@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.5.1](https://github.com/rhythwitty/bashrepo/compare/v1.5.0...v1.5.1) (2026-05-09)
+
+
+### Bug Fixes
+
+* help msg consistent across the suite ([d787739](https://github.com/rhythwitty/bashrepo/commit/d787739ccb46401529b66c74156340f82dba8bbb))
+* let help text have tone identical ([500ffe3](https://github.com/rhythwitty/bashrepo/commit/500ffe3dc8a6c5b94ce889b62a229a6f582c5cce))
+
 ## [1.5.0](https://github.com/rhythwitty/bashrepo/compare/v1.4.1...v1.5.0) (2026-05-09)
 
 
