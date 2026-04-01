@@ -99,33 +99,24 @@ status_label() {
 reason_text() {
     case "$1" in
         ok)
-            printf 'GitHub accepted the configured key.'
+            printf 'Authenticated'
             ;;
         permission_denied)
-            printf 'Permission denied (publickey) — check the host alias and uploaded key.'
+            printf 'Permission denied (publickey)'
             ;;
         timeout)
-            printf 'Operation timed out — check network access, VPN, or firewall rules.'
+            printf 'Operation timed out'
             ;;
         dns)
-            printf 'Hostname resolution failed — confirm the host alias and DNS configuration.'
+            printf 'Hostname resolution failed'
             ;;
         network)
-            printf 'Network connectivity failed — verify routing and internet access.'
+            printf 'Network connectivity failed'
             ;;
         *)
-            printf 'Unexpected SSH response — review the raw output below.'
+            printf 'Unexpected SSH response'
             ;;
     esac
-}
-
-print_indented_output() {
-    local output="$1"
-    local line
-
-    while IFS= read -r line || [[ -n "$line" ]]; do
-        printf '    %s\n' "$line"
-    done <<< "$output"
 }
 
 collect_hosts() {
@@ -158,18 +149,18 @@ collect_hosts() {
 
 verify_host() {
     local host="$1"
-    local output
     local status
     local classification
 
-    output=$(ssh -T -o BatchMode=yes -o ConnectTimeout=10 "git@$host" 2>&1)
+    ssh -T -o BatchMode=yes -o ConnectTimeout=10 "git@$host" >/tmp/iris_verify_ssh.$$ 2>&1
     status=$?
+    output=$(cat /tmp/iris_verify_ssh.$$)
+    rm -f /tmp/iris_verify_ssh.$$ 
 
     classification=$(classify_output "$output")
 
     RESULTS_HOSTS+=("$host")
     RESULTS_CODES+=("$classification")
-    RESULTS_OUTPUTS+=("$output")
 
     if [[ "$classification" == "ok" ]]; then
         PASSED=$((PASSED + 1))
@@ -205,7 +196,6 @@ fi
 
 RESULTS_HOSTS=()
 RESULTS_CODES=()
-RESULTS_OUTPUTS=()
 PASSED=0
 FAILED=0
 
@@ -213,7 +203,7 @@ echo "${BOLD}SSH verification${RESET}"
 echo "Config: $CONFIG_FILE"
 echo "Hosts: ${#HOSTS[@]}"
 summary_border
-printf "%-28s %-12s %s\n" "Host" "Status" "Details"
+printf "%-28s %-12s %s\n" "Host" "Status" "Summary"
 summary_border
 
 for host in "${HOSTS[@]}"; do
@@ -227,12 +217,11 @@ for i in "${!RESULTS_HOSTS[@]}"; do
 done
 
 summary_border
-printf '%s%d%s passed, %s%d%s failed, %s%d%s total\n' "$GREEN" "$PASSED" "$RESET" "$RED" "$FAILED" "$RESET" "$CYAN" "${#HOSTS[@]}" "$RESET"
+printf 'Summary: %d total • %s%d%s passed • %s%d%s failed\n' "${#HOSTS[@]}" "$GREEN" "$PASSED" "$RESET" "$RED" "$FAILED" "$RESET"
 
 if [[ $FAILED -ne 0 ]]; then
     echo ""
-    echo "${BOLD}Failure details${RESET}"
-    summary_border
+    echo "${BOLD}Failed hosts${RESET}"
     for i in "${!RESULTS_HOSTS[@]}"; do
         classification="${RESULTS_CODES[$i]}"
         if [[ "$classification" == "ok" ]]; then
@@ -240,13 +229,10 @@ if [[ $FAILED -ne 0 ]]; then
         fi
 
         host="${RESULTS_HOSTS[$i]}"
-        output="${RESULTS_OUTPUTS[$i]}"
-        printf '%s%s%s\n' "$RED" "$host" "$RESET"
-        printf '  %s\n' "$(reason_text "$classification")"
-        print_indented_output "$output"
-        echo ""
+        printf '• %s — %s\n' "$host" "$(reason_text "$classification")"
     done
 
+    echo ""
     echo "${BOLD}Next steps${RESET}"
     printf '%s\n' '- Re-run `iris setup-ssh` if the alias or key needs to be regenerated.'
     printf '%s\n' '- Check that the matching public key is uploaded to GitHub for each host.'
