@@ -1,5 +1,17 @@
 # Changelog
 
+## [1.2.0](https://github.com/rhythwitty/bashrepo/compare/v1.1.1...v1.2.0) (2026-05-09)
+
+
+### Features
+
+* make `verify-ssh` shorter status labels ([8023066](https://github.com/rhythwitty/bashrepo/commit/802306653478408b1fba9f845e7ca5b3fd66fd31))
+
+
+### Bug Fixes
+
+* setup-ssh non-standard whitespace before SSH_USER ([301fb22](https://github.com/rhythwitty/bashrepo/commit/301fb227b8bb8ccdd69f31a9f2efcfeb52ef29f1))
+
 ## [1.1.1](https://github.com/rhythwitty/bashrepo/compare/v1.1.0...v1.1.1) (2026-05-09)
 
 
