@@ -67,7 +67,7 @@ while IFS= read -r PID; do
 done <<< "$PID_LIST"
 echo ""
 
-read -p "Are you sure you want to kill these process(es)? (y/N): " CONFIRM
+read -r -p "Are you sure you want to kill these process(es)? (y/N): " CONFIRM
 
 if [[ "$CONFIRM" =~ ^[Yy]$ ]]; then
     while IFS= read -r PID; do
