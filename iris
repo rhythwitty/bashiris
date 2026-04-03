@@ -5,7 +5,6 @@
 #  https://github.com/rhythwitty/bashrepo
 # ─────────────────────────────────────────────
 
-IRIS_VERSION="1.0.0"
 IRIS_LIB_DIR="/usr/local/lib/iris"
 IRIS_UPDATE_URL="https://github.com/rhythwitty/bashrepo/raw/main/install.sh"
 IRIS_RAW_URL="https://github.com/rhythwitty/bashrepo/raw/main/iris"
@@ -31,7 +30,7 @@ get_current_version() {
         fi
     done
 
-    echo "$IRIS_VERSION"
+    return 1
 }
 
 get_remote_version() {
@@ -41,7 +40,7 @@ get_remote_version() {
 show_help() {
     local current_version
 
-    current_version="$(get_current_version)"
+    current_version="$(get_current_version)" || current_version="unknown"
 
     if command -v tput &>/dev/null; then
         bold=$(tput bold); reset=$(tput sgr0)
@@ -80,7 +79,13 @@ case "$1" in
         show_help
         ;;
     --version|-v)
-        echo "iris v$(get_current_version)"
+        CURRENT_VERSION="$(get_current_version)"
+        if [[ -z "$CURRENT_VERSION" ]]; then
+            echo "❌  Could not determine iris version."
+            echo "    Missing .release-please-manifest.json."
+            exit 1
+        fi
+        echo "iris v${CURRENT_VERSION}"
         ;;
     --update|--upgrade)
         echo "Checking for updates..."
@@ -89,6 +94,8 @@ case "$1" in
         
         if [[ -z "$REMOTE_VERSION" ]]; then
             echo "⚠️  Could not check remote version. Proceeding with update..."
+        elif [[ -z "$CURRENT_VERSION" ]]; then
+            echo "⚠️  Could not determine current version. Proceeding with update..."
         elif [[ "$CURRENT_VERSION" == "$REMOTE_VERSION" ]]; then
             echo "✅  iris is already up to date (v${CURRENT_VERSION})."
             exit 0
