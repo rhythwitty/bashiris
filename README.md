@@ -28,21 +28,6 @@ iris --update         # compare the installed manifest with main and update if n
 iris --upgrade        # alias for --update
 ```
 
-## Development
-
-```bash
-make fmt    # format shell scripts with shfmt
-make lint   # run shellcheck across the repo scripts
-make check  # run formatting and lint checks
-```
-
-To enable the tracked pre-commit hook:
-
-```bash
-chmod +x .githooks/pre-commit
-git config core.hooksPath .githooks
-```
-
 ## Commands
 
 | Command | macOS | Linux | Description |
@@ -60,8 +45,7 @@ git config core.hooksPath .githooks
 3. Add `# IRIS_PLATFORM: macos` for macOS-only commands.
 4. Register the command in `SCRIPTS_COMMON` or `SCRIPTS_MACOS` in `install.sh`.
 
-## Releases
+## Documentation
 
-Versioning is automated with [Release Please](https://github.com/googleapis/release-please) and **Conventional Commits**.
-
-See [RELEASING.md](./RELEASING.md) for the release workflow and version rules.
+- [Development](./documentations/DEVELOPMENT.md) — Tooling, formatting, and linting setup.
+- [Releasing](./documentations/RELEASING.md) — Release workflow, versioning, and Conventional Commits.
