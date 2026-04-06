@@ -1,6 +1,6 @@
 # iris
 
-A unified CLI for utility scripts. Works on macOS and Linux.
+A unified CLI for utility scripts on macOS and Linux.
 
 ## Install
 
@@ -8,16 +8,16 @@ A unified CLI for utility scripts. Works on macOS and Linux.
 curl -sL https://github.com/rhythwitty/bashrepo/raw/main/install.sh | bash
 ```
 
-The installer detects your OS and only installs compatible scripts.
+The installer detects your OS, installs only compatible scripts, and saves the release manifest used for version checks.
 
 ## Usage
 
 ```bash
-iris                    # list available commands
-iris <command> [args]   # run a command
-iris --update           # update iris and all scripts (checks version first)
-iris --upgrade          # alias for --update
-iris --version          # show version
+iris                  # list available commands
+iris <command> [args] # run a command
+iris --version        # show the installed version
+iris --update         # compare the installed manifest with main and update if needed
+iris --upgrade        # alias for --update
 ```
 
 ## Commands
@@ -25,49 +25,20 @@ iris --version          # show version
 | Command | macOS | Linux | Description |
 |---|---|---|---|
 | `check-power` | ✅ | ❌ | Show power, sleep, and remote login config |
-| `download-yt` | ✅ | ✅ | Download YouTube videos via yt-dlp |
-| `kill-port`   | ✅ | ✅ | Kill the process running on a given port |
-| `setup-ssh`   | ✅ | ✅ | Generate SSH keys and configure GitHub access |
-| `verify-ssh`  | ✅ | ✅ | Verify GitHub SSH host aliases from `~/.ssh/config` |
+| `download-yt` | ✅ | ✅ | Download YouTube videos via `yt-dlp` |
+| `kill-port` | ✅ | ✅ | Kill the process running on a given port |
+| `setup-ssh` | ✅ | ✅ | Generate SSH keys and configure GitHub access |
+| `verify-ssh` | ✅ | ✅ | Verify GitHub SSH host aliases from `~/.ssh/config` |
 
-### check-power _(macOS only)_
-```bash
-iris check-power
-```
+## Adding a command
 
-### download-yt
-```bash
-iris download-yt https://youtube.com/watch?v=...
-iris download-yt -b firefox -r 720 https://...
-iris download-yt --browser safari --resolution 480 https://...
-iris download-yt --update ytdlp
-iris download-yt --help
-```
+1. Create `scripts/<command-name>.sh`.
+2. Add `# IRIS_DESC: <description>` near the top.
+3. Add `# IRIS_PLATFORM: macos` for macOS-only commands.
+4. Register the command in `SCRIPTS_COMMON` or `SCRIPTS_MACOS` in `install.sh`.
 
-### kill-port
-```bash
-iris kill-port <port_number>
-```
+## Releases
 
-### setup-ssh
-```bash
-iris setup-ssh
-```
+Versioning is automated with [Release Please](https://github.com/googleapis/release-please) and **Conventional Commits**.
 
-### verify-ssh
-```bash
-iris verify-ssh
-```
-
-## Adding a new command
-
-1. Create `scripts/<command-name>.sh` with `# IRIS_DESC: <description>` near the top
-2. Add `# IRIS_PLATFORM: macos` if macOS-only; omit for cross-platform
-3. If you want to group related commands, use a subfolder like `scripts/ssh/<command>.sh`
-4. Add the command name to `SCRIPTS_COMMON` or `SCRIPTS_MACOS` in `install.sh`
-
-## Releasing
-
-Version management and releases are automated using **Conventional Commits** and **GitHub Actions**.
-
-See [RELEASING.md](./RELEASING.md) for detailed instructions on how to bump versions and publish new releases.
+See [RELEASING.md](./RELEASING.md) for the release workflow and version rules.
