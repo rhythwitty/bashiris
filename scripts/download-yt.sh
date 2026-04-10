@@ -4,6 +4,7 @@
 #  download-yt — yt-dlp wrapper
 #  https://github.com/rhythwitty/bashrepo
 # ─────────────────────────────────────────────
+# IRIS_DESC: Download YouTube videos via yt-dlp
 
 SCRIPT_NAME="download-yt"
 SCRIPT_URL="https://github.com/rhythwitty/bashrepo/raw/main/scripts/download-yt.sh"
