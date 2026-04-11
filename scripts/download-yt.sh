@@ -172,6 +172,20 @@ fi
 FORMAT="bv*[vcodec^=avc][height<=${MAX_RES}]+ba[ext=m4a]/b[ext=mp4][height<=${MAX_RES}]/b[ext=mp4]/b"
 
 # ── Download ──────────────────────────────────
+# If playlist is disabled, strip playlist-related parameters from YouTube URLs
+# to avoid 429 errors when yt-dlp attempts to extract playlist metadata.
+if [ "$ALLOW_PLAYLIST" = false ]; then
+    if [[ "$URL" == *"youtube.com"* ]] || [[ "$URL" == *"youtu.be"* ]]; then
+        # Strip list and index parameters
+        CLEANED_URL=$(echo "$URL" | sed -e 's/[&?]list=[^&]*//g' -e 's/[&?]index=[^&]*//g')
+        # Fix potential malformed URL if the first parameter was removed
+        if [[ "$CLEANED_URL" == *"watch&"* ]]; then
+            CLEANED_URL="${CLEANED_URL/watch&/watch?}"
+        fi
+        URL="$CLEANED_URL"
+    fi
+fi
+
 echo "⬇️   Downloading:  $URL"
 echo "🌐  Browser:       $BROWSER"
 echo "📐  Max res:       ${MAX_RES}p"
