@@ -69,6 +69,7 @@ show_help() {
     echo "${bold}OTHER${reset}"
     echo "    iris --update          Update iris and all scripts"
     echo "    iris --upgrade         Alias for --update"
+    echo "    iris --update-deps     Update external dependencies for all scripts"
     echo "    iris --version         Show version"
     echo "    iris --help            Show this help"
     echo ""
@@ -105,6 +106,24 @@ case "$1" in
 
         echo "Updating iris and scripts..."
         curl -sL "$IRIS_UPDATE_URL" | bash
+        ;;
+    --update-deps)
+        echo "Updating script dependencies..."
+        if [[ -d "$IRIS_LIB_DIR" ]]; then
+            for script in "$IRIS_LIB_DIR"/*.sh; do
+                [[ -f "$script" ]] || continue
+                cmd=$(basename "$script" .sh)
+                # Check if script handles --update-deps
+                if grep -q "--update-deps" "$script"; then
+                    echo "📦  Updating dependencies for $cmd..."
+                    "$script" --update-deps
+                fi
+            done
+            echo "✅  All dependencies updated."
+        else
+            echo "❌  Iris library directory not found."
+            exit 1
+        fi
         ;;
     *)
         SCRIPT="$IRIS_LIB_DIR/$1.sh"
