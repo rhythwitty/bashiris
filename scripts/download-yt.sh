@@ -19,7 +19,7 @@ show_help() {
 
 $(tput bold)USAGE$(tput sgr0)
     $SCRIPT_NAME [OPTIONS] <URL>
-    $SCRIPT_NAME --update <self|ytdlp>
+    $SCRIPT_NAME --update-deps
 
 $(tput bold)OPTIONS$(tput sgr0)
     -b, --browser <browser>     Browser to pull cookies from for authenticated downloads
@@ -33,8 +33,7 @@ $(tput bold)OPTIONS$(tput sgr0)
     -p, --playlist              Allow downloading entire playlists if URL points to one
     -h, --help                  Show this help message
 
-    --update self               Update this script to the latest version
-    --update ytdlp              Update yt-dlp to the latest version (fixes format errors)
+    --update-deps               Update yt-dlp to the latest version (fixes format errors)
 
 $(tput bold)EXAMPLES$(tput sgr0)
     $SCRIPT_NAME 'https://youtube.com/watch?v=...'
@@ -45,7 +44,7 @@ $(tput bold)EXAMPLES$(tput sgr0)
 
 $(tput bold)TROUBLESHOOTING$(tput sgr0)
     "Requested format is not available" / "n challenge solving failed"
-    → Run: $SCRIPT_NAME --update ytdlp
+    → Run: $SCRIPT_NAME --update-deps
       YouTube frequently changes its player; keeping yt-dlp up to date fixes this.
 
     "zsh: no matches found" / URL gets split at & or ?
@@ -59,42 +58,20 @@ $(tput bold)NOTES$(tput sgr0)
 EOF
 }
 
-# ── Update ────────────────────────────────────
-if [[ "$1" == "--update" ]]; then
-    case "$2" in
-        self)
-            echo "Updating $SCRIPT_NAME..."
-            TMP=$(mktemp /tmp/${SCRIPT_NAME}.XXXXXX)
-            curl -sL "$SCRIPT_URL" -o "$TMP"
-            chmod +x "$TMP"
-            sudo mv "$TMP" "${BASH_SOURCE[0]}"
-            echo "✅  Script update complete!"
-            ;;
-        ytdlp)
-            echo "Updating yt-dlp..."
-            if command -v brew &>/dev/null && brew list yt-dlp &>/dev/null; then
-                brew upgrade yt-dlp
-            elif command -v pip3 &>/dev/null && pip3 show yt-dlp &>/dev/null; then
-                pip3 install --upgrade yt-dlp
-            elif command -v yt-dlp &>/dev/null; then
-                yt-dlp -U
-            else
-                echo "❌  yt-dlp not found. Install it with: brew install yt-dlp"
-                exit 1
-            fi
-            echo "✅  yt-dlp update complete!"
-            ;;
-        *)
-            echo "❌  Missing or invalid target for --update."
-            echo ""
-            echo "    Usage:  $SCRIPT_NAME --update <target>"
-            echo ""
-            echo "    Targets:"
-            echo "      self    — update this script"
-            echo "      ytdlp   — update yt-dlp (fixes format/n-challenge errors)"
-            exit 1
-            ;;
-    esac
+# ── Update Dependencies ──────────────────────────
+if [[ "$1" == "--update-deps" ]]; then
+    echo "Updating yt-dlp..."
+    if command -v brew &>/dev/null && brew list yt-dlp &>/dev/null; then
+        brew upgrade yt-dlp
+    elif command -v pip3 &>/dev/null && pip3 show yt-dlp &>/dev/null; then
+        pip3 install --upgrade yt-dlp
+    elif command -v yt-dlp &>/dev/null; then
+        yt-dlp -U
+    else
+        echo "❌  yt-dlp not found. Install it with: brew install yt-dlp"
+        exit 1
+    fi
+    echo "✅  yt-dlp update complete!"
     exit 0
 fi
 
