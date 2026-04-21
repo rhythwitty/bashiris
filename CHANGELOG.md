@@ -1,5 +1,19 @@
 # Changelog
 
+## [1.5.0](https://github.com/rhythwitty/bashrepo/compare/v1.4.1...v1.5.0) (2026-05-09)
+
+
+### Features
+
+* remove --update self option ([8196e88](https://github.com/rhythwitty/bashrepo/commit/8196e884ee40ec4bdbbfd09eb80d76e272aafccb))
+* support iris --update-deps ([3f1c3aa](https://github.com/rhythwitty/bashrepo/commit/3f1c3aadfdce231a56918f55f6a212dcedb73088))
+
+
+### Bug Fixes
+
+* support `setup-ssh ([effdc08](https://github.com/rhythwitty/bashrepo/commit/effdc087286e2b6741b04aea1d2f41e1a13b713e))
+* unify all help message format, remove SCRIPT_URL ([fd9c9a2](https://github.com/rhythwitty/bashrepo/commit/fd9c9a2f780a3a64dfcdb837d3dc8a83bd1637da))
+
 ## [1.4.1](https://github.com/rhythwitty/bashrepo/compare/v1.4.0...v1.4.1) (2026-05-09)
 
 
