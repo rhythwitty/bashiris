@@ -21,9 +21,9 @@ $(tput bold)USAGE$(tput sgr0)
     $SCRIPT_NAME --update-deps
 
 $(tput bold)DESCRIPTION$(tput sgr0)
-    Downloads YouTube videos via yt-dlp with browser cookies for authenticated downloads.
-    The browser you specify must be installed and have visited the URL's site so yt-dlp
-    can read its session cookies (handles age-gated / members-only videos).
+    Downloads YouTube videos via yt-dlp using browser cookies for authenticated downloads.
+    The browser must be installed and have visited the URL's site so yt-dlp can read
+    its session cookies for age-gated / members-only videos.
     Output is always saved as MP4 (H.264 + AAC).
     Use --update-deps to refresh yt-dlp when YouTube changes its player and format logic.
 

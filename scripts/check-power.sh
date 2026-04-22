@@ -15,7 +15,7 @@ $(tput bold)USAGE$(tput sgr0)
 
 $(tput bold)DESCRIPTION$(tput sgr0)
     Shows Mac power, sleep, and remote login configuration.
-    Note: section 5 (remote login status) requires sudo.
+    Section 5 (remote login status) requires sudo.
 
 $(tput bold)OPTIONS$(tput sgr0)
     -h, --help      Show this help message
