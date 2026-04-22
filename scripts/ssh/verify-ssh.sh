@@ -36,7 +36,7 @@ $(tput bold)USAGE$(tput sgr0)
 
 $(tput bold)DESCRIPTION$(tput sgr0)
     Scans ~/.ssh/config for GitHub host entries (Host github_* and Host github.com)
-    and runs ssh -T git@<host> to verify that each SSH key and host alias are working.
+    and runs ssh -T git@<host> to verify that each SSH key and host alias work.
 
 $(tput bold)OPTIONS$(tput sgr0)
     -h, --help      Show this help message

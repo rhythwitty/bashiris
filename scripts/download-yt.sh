@@ -25,6 +25,7 @@ $(tput bold)DESCRIPTION$(tput sgr0)
     The browser you specify must be installed and have visited the URL's site so yt-dlp
     can read its session cookies (handles age-gated / members-only videos).
     Output is always saved as MP4 (H.264 + AAC).
+    Use --update-deps to refresh yt-dlp when YouTube changes its player and format logic.
 
 $(tput bold)OPTIONS$(tput sgr0)
     -b, --browser <browser>     Browser to pull cookies from for authenticated downloads
@@ -50,7 +51,6 @@ $(tput bold)EXAMPLES$(tput sgr0)
 $(tput bold)TROUBLESHOOTING$(tput sgr0)
     "Requested format is not available" / "n challenge solving failed"
     → Run: $SCRIPT_NAME --update-deps
-      YouTube frequently changes its player; keeping yt-dlp up to date fixes this.
 
     "zsh: no matches found" / URL gets split at & or ?
     → Always quote URLs: $SCRIPT_NAME 'https://youtube.com/watch?v=...&t=7s'
