@@ -14,8 +14,7 @@ $(tput bold)USAGE$(tput sgr0)
     setup-ssh [OPTIONS]
 
 $(tput bold)DESCRIPTION$(tput sgr0)
-    Generates an ED25519 SSH key pair, configures a GitHub-specific host
-    alias in ~/.ssh/config, and creates a local git directory.
+    Generates an ED25519 SSH key pair and configures a GitHub host alias in ~/.ssh/config.
 
 $(tput bold)OPTIONS$(tput sgr0)
     -h, --help      Show this help message
