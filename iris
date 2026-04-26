@@ -55,6 +55,14 @@ case "$1" in
     *)
         SCRIPT="$IRIS_LIB_DIR/$1.sh"
         if [[ -x "$SCRIPT" ]]; then
+            required_platform=$(grep -m1 '^# IRIS_PLATFORM:' "$SCRIPT" | sed 's/^# IRIS_PLATFORM: *//')
+            if [[ -n "$required_platform" ]]; then
+                current_platform=$(uname -s | tr '[:upper:]' '[:lower:]' | sed 's/darwin/macos/')
+                if [[ "$current_platform" != "$required_platform" ]]; then
+                    echo "❌  '$1' is only supported on $required_platform."
+                    exit 1
+                fi
+            fi
             shift
             exec "$SCRIPT" "$@"
         else
