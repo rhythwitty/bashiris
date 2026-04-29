@@ -8,7 +8,7 @@
 
 # ── Help ──────────────────────────────────────
 show_help() {
-    cat <<EOF
+    cat << EOF
 
 $(tput bold)USAGE$(tput sgr0)
     setup-ssh [OPTIONS]
@@ -29,7 +29,7 @@ EOF
 # ── Argument Parsing ──────────────────────────
 while [[ $# -gt 0 ]]; do
     case "$1" in
-        -h|--help)
+        -h | --help)
             show_help
             exit 0
             ;;
@@ -58,7 +58,7 @@ if [[ ! "$EMAIL" =~ ^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$ ]]; then
     read -p "Use ${EMAIL}@gmail.com as the email for setup? [y/N]: " USE_GMAIL
 
     case "$USE_GMAIL" in
-        [yY]|[yY][eE][sS])
+        [yY] | [yY][eE][sS])
             EMAIL="${EMAIL}@gmail.com"
             echo -e "${GREEN}✓ Using email: ${EMAIL}${NC}"
             ;;

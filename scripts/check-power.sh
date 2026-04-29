@@ -8,7 +8,7 @@
 # IRIS_PLATFORM: macos
 
 show_help() {
-    cat <<EOF
+    cat << EOF
 
 $(tput bold)USAGE$(tput sgr0)
     check-power [OPTIONS]
@@ -25,7 +25,7 @@ EOF
 
 while [[ $# -gt 0 ]]; do
     case "$1" in
-        -h|--help)
+        -h | --help)
             show_help
             exit 0
             ;;
@@ -53,7 +53,7 @@ pmset -g | grep -E "(womp|powernap|tcpkeepalive|networkoversleep)" | sort
 echo ""
 echo "5. REMOTE LOGIN (SSH) STATUS:"
 echo "   (sudo required — you may be prompted for your password)"
-sshStatus=$(sudo systemsetup -getremotelogin 2>/dev/null)
+sshStatus=$(sudo systemsetup -getremotelogin 2> /dev/null)
 if echo "$sshStatus" | grep -qi "on"; then
     echo "Remote Login: ENABLED  ($sshStatus)"
 else
@@ -61,4 +61,4 @@ else
 fi
 echo ""
 echo "6. CURRENT POWER STATE:"
-pmset -g ps 2>/dev/null || echo "AC Power"
+pmset -g ps 2> /dev/null || echo "AC Power"

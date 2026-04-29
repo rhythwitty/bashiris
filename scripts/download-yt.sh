@@ -14,7 +14,7 @@ DEFAULT_MAX_RES="1080"
 
 # ── Help ──────────────────────────────────────
 show_help() {
-    cat <<EOF
+    cat << EOF
 
 $(tput bold)USAGE$(tput sgr0)
     $SCRIPT_NAME [OPTIONS] <URL>
@@ -61,11 +61,11 @@ EOF
 # ── Update Dependencies ──────────────────────────
 if [[ "$1" == "--update-deps" ]]; then
     echo "Updating yt-dlp..."
-    if command -v brew &>/dev/null && brew list yt-dlp &>/dev/null; then
+    if command -v brew &> /dev/null && brew list yt-dlp &> /dev/null; then
         brew upgrade yt-dlp
-    elif command -v pip3 &>/dev/null && pip3 show yt-dlp &>/dev/null; then
+    elif command -v pip3 &> /dev/null && pip3 show yt-dlp &> /dev/null; then
         pip3 install --upgrade yt-dlp
-    elif command -v yt-dlp &>/dev/null; then
+    elif command -v yt-dlp &> /dev/null; then
         yt-dlp -U
     else
         echo "❌  yt-dlp not found. Install it with: brew install yt-dlp"
@@ -83,19 +83,19 @@ ALLOW_PLAYLIST=false
 
 while [[ $# -gt 0 ]]; do
     case "$1" in
-        -h|--help)
+        -h | --help)
             show_help
             exit 0
             ;;
-        -b|--browser)
+        -b | --browser)
             BROWSER="$2"
             shift 2
             ;;
-        -r|--resolution)
+        -r | --resolution)
             MAX_RES="$2"
             shift 2
             ;;
-        -p|--playlist)
+        -p | --playlist)
             ALLOW_PLAYLIST=true
             shift
             ;;
@@ -120,7 +120,7 @@ fi
 
 # ── Validate Resolution ───────────────────────
 case "$MAX_RES" in
-    480|720|1080) ;;
+    480 | 720 | 1080) ;;
     *)
         echo "❌  Invalid resolution: ${MAX_RES}. Choose from 480, 720, or 1080."
         exit 1
@@ -129,7 +129,7 @@ esac
 
 # ── Validate Browser ──────────────────────────
 case "$BROWSER" in
-    chrome|firefox|safari|edge|brave|opera) ;;
+    chrome | firefox | safari | edge | brave | opera) ;;
     *)
         echo "❌  Unsupported browser: $BROWSER"
         echo "    Supported: chrome, firefox, safari, edge, brave, opera"
@@ -138,7 +138,7 @@ case "$BROWSER" in
 esac
 
 # ── Check Dependencies ───────────────────────
-if ! command -v yt-dlp &>/dev/null; then
+if ! command -v yt-dlp &> /dev/null; then
     echo "❌  yt-dlp is not installed."
     echo "    Install it with: brew install yt-dlp"
     exit 1
