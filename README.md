@@ -28,6 +28,21 @@ iris --update         # compare the installed manifest with main and update if n
 iris --upgrade        # alias for --update
 ```
 
+## Development
+
+```bash
+make fmt    # format shell scripts with shfmt
+make lint   # run shellcheck across the repo scripts
+make check  # run formatting and lint checks
+```
+
+To enable the tracked pre-commit hook:
+
+```bash
+chmod +x .githooks/pre-commit
+git config core.hooksPath .githooks
+```
+
 ## Commands
 
 | Command | macOS | Linux | Description |
