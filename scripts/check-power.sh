@@ -5,6 +5,7 @@
 #  https://github.com/rhythwitty/bashrepo
 # ─────────────────────────────────────────────
 # IRIS_DESC: Show Mac power, sleep, and remote login configuration
+# IRIS_PLATFORM: macos
 
 echo "=== MAC POWER CONFIGURATION SUMMARY ==="
 echo ""
