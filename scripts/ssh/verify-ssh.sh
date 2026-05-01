@@ -60,7 +60,6 @@ while [[ $# -gt 0 ]]; do
             exit 1
             ;;
     esac
-    shift
 done
 
 add_host() {
@@ -150,7 +149,7 @@ collect_hosts() {
                 ;;
         esac
 
-        trimmed="${line#${line%%[![:space:]]*}}"
+        trimmed="${line#"${line%%[![:space:]]*}"}"
         case "$trimmed" in
             Host\ *)
                 for alias in $trimmed; do
@@ -253,9 +252,11 @@ if [[ $FAILED -ne 0 ]]; then
 
     echo ""
     echo "${BOLD}Next steps${RESET}"
-    printf '%s\n' '- Re-run `iris setup-ssh` if the alias or key needs to be regenerated.'
-    printf '%s\n' '- Check that the matching public key is uploaded to GitHub for each host.'
-    printf '%s\n' '- Confirm the network can reach `github.com` if you see timeouts.'
+    cat << 'EOF'
+- Re-run `iris setup-ssh` if the alias or key needs to be regenerated.
+- Check that the matching public key is uploaded to GitHub for each host.
+- Confirm the network can reach `github.com` if you see timeouts.
+EOF
     exit 1
 fi
 
