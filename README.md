@@ -26,6 +26,7 @@ iris <command> [args] # run a command
 iris --version        # show the installed version
 iris --update         # compare the installed manifest with main and update if needed
 iris --upgrade        # alias for --update
+iris --update-deps    # update external dependencies for all scripts
 ```
 
 ## Commands
@@ -40,10 +41,12 @@ iris --upgrade        # alias for --update
 
 ## Adding a command
 
-1. Create `scripts/<command-name>.sh`.
+1. Create `scripts/<name>.sh` (or `scripts/<subdir>/<name>.sh`).
 2. Add `# IRIS_DESC: <description>` near the top.
 3. Add `# IRIS_PLATFORM: macos` for macOS-only commands.
-4. Register the command in `SCRIPTS_COMMON` or `SCRIPTS_MACOS` in `install.sh`.
+4. Register the path in `SCRIPTS_COMMON` or `SCRIPTS_MACOS` in `install.sh`.
+
+*Note: All scripts are flattened into `/usr/local/lib/iris/` during installation.*
 
 ## Documentation
 
