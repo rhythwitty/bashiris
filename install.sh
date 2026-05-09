@@ -42,6 +42,11 @@ curl -sL "$REPO_URL/iris" -o /tmp/iris_dispatcher
 chmod +x /tmp/iris_dispatcher
 sudo mv /tmp/iris_dispatcher "$IRIS_BIN"
 
+# Install release manifest for version lookup
+echo "  → .release-please-manifest.json"
+curl -sL "$REPO_URL/.release-please-manifest.json" -o /tmp/iris_release_manifest
+sudo mv /tmp/iris_release_manifest "$IRIS_LIB/.release-please-manifest.json"
+
 # Install scripts
 for script in "${SCRIPTS[@]}"; do
     script_name=$(basename "$script")
