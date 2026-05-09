@@ -1,5 +1,20 @@
 # Changelog
 
+## [1.6.0](https://github.com/rhythwitty/bashrepo/compare/v1.5.1...v1.6.0) (2026-05-09)
+
+
+### Features
+
+* add Pre-commit hook that runs `make check` ([f72e70f](https://github.com/rhythwitty/bashrepo/commit/f72e70f2e853bbd98303234440274e2fb2816625))
+* add shellcheck and shfmt ([a602319](https://github.com/rhythwitty/bashrepo/commit/a602319ffcd438265172e11249015dda2f4c6be1))
+
+
+### Bug Fixes
+
+* clean up shellcheck warnings ([1233f48](https://github.com/rhythwitty/bashrepo/commit/1233f485bb0a213fd2148f51cde60e3c6a652dc1))
+* make fmt ([a66c5a2](https://github.com/rhythwitty/bashrepo/commit/a66c5a2a8e1d5873e14474fed634d9a02fc9f608))
+* ShellCheck ([805f32c](https://github.com/rhythwitty/bashrepo/commit/805f32ceb0c9432739777c60868895800380eb61))
+
 ## [1.5.1](https://github.com/rhythwitty/bashrepo/compare/v1.5.0...v1.5.1) (2026-05-09)
 
 
