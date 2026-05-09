@@ -27,11 +27,11 @@ read -p "Press Enter to use default, or type a custom username: " CUSTOM_USER
 
 # Use custom username if provided, otherwise use default
 if [ -z "$CUSTOM_USER" ]; then
-    SSH_USER="$DEFAULT_USER"
-    echo -e "${GREEN}✓ Using default SSH username: ${SSH_USER}${NC}"
+    SSH_USER="$DEFAULT_USER"
+    echo -e "${GREEN}✓ Using default SSH username: ${SSH_USER}${NC}"
 else
-    SSH_USER="$CUSTOM_USER"
-    echo -e "${GREEN}✓ Using custom SSH username: ${SSH_USER}${NC}"
+    SSH_USER="$CUSTOM_USER"
+    echo -e "${GREEN}✓ Using custom SSH username: ${SSH_USER}${NC}"
 fi
 
 # Generate SSH key
@@ -41,12 +41,12 @@ chmod 700 ~/.ssh
 ssh-keygen -t ed25519 -C "$EMAIL" -f ~/.ssh/id_ed25519_${SSH_USER} -N "" -q
 
 if [ $? -eq 0 ]; then
-    echo -e "${GREEN}✓ SSH key pair generated successfully${NC}"
-    echo -e "  Private key: ~/.ssh/id_ed25519_${SSH_USER}"
-    echo -e "  Public key:  ~/.ssh/id_ed25519_${SSH_USER}.pub"
+    echo -e "${GREEN}✓ SSH key pair generated successfully${NC}"
+    echo -e "  Private key: ~/.ssh/id_ed25519_${SSH_USER}"
+    echo -e "  Public key:  ~/.ssh/id_ed25519_${SSH_USER}.pub"
 else
-    echo -e "${RED}✗ Failed to generate SSH key${NC}"
-    exit 1
+    echo -e "${RED}✗ Failed to generate SSH key${NC}"
+    exit 1
 fi
 
 # Set proper permissions
@@ -61,10 +61,10 @@ echo -e "\n${YELLOW}→ Adding configuration to ~/.ssh/config...${NC}"
 cat >> ~/.ssh/config << EOF
 
 Host github_${SSH_USER}
-  HostName github.com
-  IdentityFile ~/.ssh/id_ed25519_${SSH_USER}
-  User git
-  IdentitiesOnly yes
+  HostName github.com
+  IdentityFile ~/.ssh/id_ed25519_${SSH_USER}
+  User git
+  IdentitiesOnly yes
 EOF
 
 chmod 600 ~/.ssh/config
@@ -92,6 +92,6 @@ echo -e "${YELLOW}💡 Run: cd ~/git/github_${SSH_USER}${NC}"
 echo -e "\n${BLUE}=== How to Clone Repositories ===${NC}"
 echo -e "Replace ${YELLOW}github.com${NC} with ${YELLOW}github_${SSH_USER}${NC} in your clone commands:\n"
 echo -e "${GREEN}Example:${NC}"
-echo -e "  git clone git@github_${SSH_USER}:${SSH_USER}/hello-world.git"
+echo -e "  git clone git@github_${SSH_USER}:${SSH_USER}/hello-world.git"
 echo -e "\n${YELLOW}💡 cd ~/git/github_${SSH_USER}/ — then clone your repos!${NC}"
 echo -e "${GREEN}Setup complete! 🎉${NC}\n"
