@@ -7,7 +7,6 @@
 # IRIS_DESC: Download YouTube videos via yt-dlp
 
 SCRIPT_NAME="download-yt"
-SCRIPT_URL="https://github.com/rhythwitty/bashrepo/raw/main/scripts/download-yt.sh"
 
 # ── Defaults ──────────────────────────────────
 DEFAULT_BROWSER="chrome"
@@ -20,6 +19,12 @@ show_help() {
 $(tput bold)USAGE$(tput sgr0)
     $SCRIPT_NAME [OPTIONS] <URL>
     $SCRIPT_NAME --update-deps
+
+$(tput bold)DESCRIPTION$(tput sgr0)
+    Downloads YouTube videos via yt-dlp with browser cookies for authenticated downloads.
+    The browser you specify must be installed and have visited the URL's site so yt-dlp
+    can read its session cookies (handles age-gated / members-only videos).
+    Output is always saved as MP4 (H.264 + AAC).
 
 $(tput bold)OPTIONS$(tput sgr0)
     -b, --browser <browser>     Browser to pull cookies from for authenticated downloads
@@ -49,11 +54,6 @@ $(tput bold)TROUBLESHOOTING$(tput sgr0)
 
     "zsh: no matches found" / URL gets split at & or ?
     → Always quote URLs: $SCRIPT_NAME 'https://youtube.com/watch?v=...&t=7s'
-
-$(tput bold)NOTES$(tput sgr0)
-    • The browser you specify must be installed and have visited the URL's site
-      so yt-dlp can read its session cookies (handles age-gated / members-only videos).
-    • Output is always saved as MP4 (H.264 + AAC).
 
 EOF
 }
