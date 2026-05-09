@@ -7,31 +7,40 @@
 
 show_help() {
     cat <<EOF
-USAGE
+
+$(tput bold)USAGE$(tput sgr0)
     kill-port <port_number>
 
-DESCRIPTION
+$(tput bold)DESCRIPTION$(tput sgr0)
     Finds and terminates the process(es) listening on the given port.
     Attempts SIGTERM first, escalates to SIGKILL if the process survives.
 
-EXAMPLES
+$(tput bold)EXAMPLES$(tput sgr0)
     kill-port 3000
-    kill-port 8080
+    iris kill-port 8080
+
 EOF
 }
 
-if [[ "$1" == "-h" || "$1" == "--help" ]]; then
-    show_help
-    exit 0
-fi
+while [[ $# -gt 0 ]]; do
+    case "$1" in
+        -h|--help)
+            show_help
+            exit 0
+            ;;
+        *)
+            PORT="$1"
+            shift
+            ;;
+    esac
+done
 
 # Check if port number provided
-if [ -z "$1" ]; then
-    echo "Usage: kill-port <port_number>"
+if [ -z "$PORT" ]; then
+    echo "❌  No port number provided."
+    echo "    Run 'kill-port --help' for usage."
     exit 1
 fi
-
-PORT="$1"
 
 # Validate port is a number in a valid range
 if ! [[ "$PORT" =~ ^[0-9]+$ ]] || [ "$PORT" -lt 1 ] || [ "$PORT" -gt 65535 ]; then
