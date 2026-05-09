@@ -36,15 +36,18 @@ $(tput bold)OPTIONS$(tput sgr0)
     --update ytdlp              Update yt-dlp to the latest version (fixes format errors)
 
 $(tput bold)EXAMPLES$(tput sgr0)
-    $SCRIPT_NAME https://youtube.com/watch?v=...
-    $SCRIPT_NAME -b firefox https://youtube.com/watch?v=...
-    $SCRIPT_NAME -r 720 https://youtube.com/watch?v=...
-    $SCRIPT_NAME -b safari -r 480 https://youtube.com/watch?v=...
+    $SCRIPT_NAME 'https://youtube.com/watch?v=...'
+    $SCRIPT_NAME -b firefox 'https://youtube.com/watch?v=...'
+    $SCRIPT_NAME -r 720 'https://youtube.com/watch?v=...'
+    $SCRIPT_NAME -b safari -r 480 'https://youtube.com/watch?v=...'
 
 $(tput bold)TROUBLESHOOTING$(tput sgr0)
     "Requested format is not available" / "n challenge solving failed"
     → Run: $SCRIPT_NAME --update ytdlp
       YouTube frequently changes its player; keeping yt-dlp up to date fixes this.
+
+    "zsh: no matches found" / URL gets split at & or ?
+    → Always quote URLs: $SCRIPT_NAME 'https://youtube.com/watch?v=...&t=7s'
 
 $(tput bold)NOTES$(tput sgr0)
     • The browser you specify must be installed and have visited the URL's site
@@ -59,16 +62,17 @@ if [[ "$1" == "--update" ]]; then
     case "$2" in
         self)
             echo "Updating $SCRIPT_NAME..."
-            curl -sL "$SCRIPT_URL" -o "$SCRIPT_NAME"
-            chmod +x "$SCRIPT_NAME"
-            sudo mv "$SCRIPT_NAME" /usr/local/bin/"$SCRIPT_NAME"
+            TMP=$(mktemp /tmp/${SCRIPT_NAME}.XXXXXX)
+            curl -sL "$SCRIPT_URL" -o "$TMP"
+            chmod +x "$TMP"
+            sudo mv "$TMP" "${BASH_SOURCE[0]}"
             echo "✅  Script update complete!"
             ;;
         ytdlp)
             echo "Updating yt-dlp..."
-            if command -v brew &>/dev/null && brew list yt-dlp &>/dev/null 2>&1; then
+            if command -v brew &>/dev/null && brew list yt-dlp &>/dev/null; then
                 brew upgrade yt-dlp
-            elif command -v pip3 &>/dev/null && pip3 show yt-dlp &>/dev/null 2>&1; then
+            elif command -v pip3 &>/dev/null && pip3 show yt-dlp &>/dev/null; then
                 pip3 install --upgrade yt-dlp
             elif command -v yt-dlp &>/dev/null; then
                 yt-dlp -U
@@ -148,6 +152,13 @@ case "$BROWSER" in
         exit 1
         ;;
 esac
+
+# ── Check Dependencies ───────────────────────
+if ! command -v yt-dlp &>/dev/null; then
+    echo "❌  yt-dlp is not installed."
+    echo "    Install it with: brew install yt-dlp"
+    exit 1
+fi
 
 # ── Build Format String ───────────────────────
 # Prefer H.264 video up to MAX_RES + M4A audio, fallback to best mp4
