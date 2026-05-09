@@ -42,10 +42,12 @@ show_help() {
 
     current_version="$(get_current_version)" || current_version="unknown"
 
-    if command -v tput &>/dev/null; then
-        bold=$(tput bold); reset=$(tput sgr0)
+    if command -v tput &> /dev/null; then
+        bold=$(tput bold)
+        reset=$(tput sgr0)
     else
-        bold=""; reset=""
+        bold=""
+        reset=""
     fi
 
     echo ""
@@ -76,10 +78,10 @@ show_help() {
 }
 
 case "$1" in
-    ""|--help|-h)
+    "" | --help | -h)
         show_help
         ;;
-    --version|-v)
+    --version | -v)
         CURRENT_VERSION="$(get_current_version)"
         if [[ -z "$CURRENT_VERSION" ]]; then
             echo "❌  Could not determine iris version."
@@ -88,11 +90,11 @@ case "$1" in
         fi
         echo "iris v${CURRENT_VERSION}"
         ;;
-    --update|--upgrade)
+    --update | --upgrade)
         echo "Checking for updates..."
         CURRENT_VERSION="$(get_current_version)"
         REMOTE_VERSION="$(get_remote_version)"
-        
+
         if [[ -z "$REMOTE_VERSION" ]]; then
             echo "⚠️  Could not check remote version. Proceeding with update..."
         elif [[ -z "$CURRENT_VERSION" ]]; then
