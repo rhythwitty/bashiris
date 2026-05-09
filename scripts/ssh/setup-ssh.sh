@@ -18,6 +18,22 @@ echo -e "${BLUE}=== SSH Key Setup Script ===${NC}\n"
 # Prompt for email
 read -p "Enter your email (e.g., abc@gmail.com): " EMAIL
 
+if [[ ! "$EMAIL" =~ ^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$ ]]; then
+    echo -e "${YELLOW}⚠️  That does not look like a valid email address.${NC}"
+    read -p "Use ${EMAIL}@gmail.com as the email for setup? [y/N]: " USE_GMAIL
+
+    case "$USE_GMAIL" in
+        [yY]|[yY][eE][sS])
+            EMAIL="${EMAIL}@gmail.com"
+            echo -e "${GREEN}✓ Using email: ${EMAIL}${NC}"
+            ;;
+        *)
+            echo -e "${RED}✗ Invalid email input. Exiting without making changes.${NC}"
+            exit 1
+            ;;
+    esac
+fi
+
 # Extract username from email (part before @)
 DEFAULT_USER=$(echo "$EMAIL" | cut -d'@' -f1)
 
