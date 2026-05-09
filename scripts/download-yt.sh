@@ -206,5 +206,6 @@ yt-dlp \
     --cookies-from-browser "$BROWSER" \
     -f "$FORMAT" \
     --merge-output-format mp4 \
+    --extractor-args "youtubetab:skip=authcheck" \
     $PLAYLIST_FLAG \
     "$URL"
