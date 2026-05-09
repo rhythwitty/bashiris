@@ -10,6 +10,15 @@ curl -sL https://github.com/rhythwitty/bashrepo/raw/main/install.sh | bash
 
 The installer detects your OS, installs only compatible scripts, and saves the release manifest used for version checks.
 
+## Uninstall
+
+To remove `iris` and all its installed scripts from your system, run:
+
+```bash
+sudo rm -f /usr/local/bin/iris
+sudo rm -rf /usr/local/lib/iris
+```
+
 ## Usage
 
 ```bash
