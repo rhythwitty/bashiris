@@ -6,6 +6,42 @@
 # ─────────────────────────────────────────────
 # IRIS_DESC: Generate SSH keys and configure GitHub access
 
+# ── Help ──────────────────────────────────────
+show_help() {
+    cat <<EOF
+
+$(tput bold)USAGE$(tput sgr0)
+    setup-ssh [OPTIONS]
+
+$(tput bold)DESCRIPTION$(tput sgr0)
+    Generates an ED25519 SSH key pair, configures a GitHub-specific host
+    alias in ~/.ssh/config, and creates a local git directory.
+
+$(tput bold)OPTIONS$(tput sgr0)
+    -h, --help      Show this help message
+
+$(tput bold)EXAMPLES$(tput sgr0)
+    setup-ssh
+    iris setup-ssh
+
+EOF
+}
+
+# ── Argument Parsing ──────────────────────────
+while [[ $# -gt 0 ]]; do
+    case "$1" in
+        -h|--help)
+            show_help
+            exit 0
+            ;;
+        *)
+            echo "❌  Unknown option: $1"
+            echo "    Run 'setup-ssh --help' for usage."
+            exit 1
+            ;;
+    esac
+done
+
 # Colors for output
 GREEN='\033[0;32m'
 BLUE='\033[0;34m'
