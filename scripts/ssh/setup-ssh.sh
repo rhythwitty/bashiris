@@ -51,11 +51,11 @@ NC='\033[0m' # No Color
 echo -e "${BLUE}=== SSH Key Setup Script ===${NC}\n"
 
 # Prompt for email
-read -p "Enter your email (e.g., abc@gmail.com): " EMAIL
+read -r -p "Enter your email (e.g., abc@gmail.com): " EMAIL
 
 if [[ ! "$EMAIL" =~ ^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$ ]]; then
     echo -e "${YELLOW}⚠️  That does not look like a valid email address.${NC}"
-    read -p "Use ${EMAIL}@gmail.com as the email for setup? [y/N]: " USE_GMAIL
+    read -r -p "Use ${EMAIL}@gmail.com as the email for setup? [y/N]: " USE_GMAIL
 
     case "$USE_GMAIL" in
         [yY] | [yY][eE][sS])
@@ -74,7 +74,7 @@ DEFAULT_USER=$(echo "$EMAIL" | cut -d'@' -f1)
 
 # Ask for confirmation or override
 echo -e "\n${YELLOW}Default SSH username will be: ${DEFAULT_USER}${NC}"
-read -p "Press Enter to use default, or type a custom username: " CUSTOM_USER
+read -r -p "Press Enter to use default, or type a custom username: " CUSTOM_USER
 
 # Use custom username if provided, otherwise use default
 if [ -z "$CUSTOM_USER" ]; then
@@ -87,14 +87,14 @@ fi
 
 # Generate SSH key
 echo -e "\n${YELLOW}→ Generating ED25519 SSH key pair...${NC}"
-mkdir -p ~/.ssh
-chmod 700 ~/.ssh
-ssh-keygen -t ed25519 -C "$EMAIL" -f ~/.ssh/id_ed25519_${SSH_USER} -N "" -q
+mkdir -p "$HOME/.ssh"
+chmod 700 "$HOME/.ssh"
+key_path="$HOME/.ssh/id_ed25519_${SSH_USER}"
 
-if [ $? -eq 0 ]; then
+if ssh-keygen -t ed25519 -C "$EMAIL" -f "$key_path" -N "" -q; then
     echo -e "${GREEN}✓ SSH key pair generated successfully${NC}"
-    echo -e "  Private key: ~/.ssh/id_ed25519_${SSH_USER}"
-    echo -e "  Public key:  ~/.ssh/id_ed25519_${SSH_USER}.pub"
+    echo -e "  Private key: $key_path"
+    echo -e "  Public key:  ${key_path}.pub"
 else
     echo -e "${RED}✗ Failed to generate SSH key${NC}"
     exit 1
@@ -102,29 +102,29 @@ fi
 
 # Set proper permissions
 echo -e "\n${YELLOW}→ Setting secure permissions (600) on private key...${NC}"
-chmod 600 ~/.ssh/id_ed25519_${SSH_USER}
+chmod 600 "$key_path"
 echo -e "${GREEN}✓ Permissions set successfully${NC}"
 
 # Create or update SSH config
 echo -e "\n${YELLOW}→ Adding configuration to ~/.ssh/config...${NC}"
 
 # Append to SSH config
-cat >> ~/.ssh/config << EOF
+{
+    printf '\n'
+    printf 'Host github_%s\n' "$SSH_USER"
+    printf '  HostName github.com\n'
+    printf '  IdentityFile %s\n' "$key_path"
+    printf '  User git\n'
+    printf '  IdentitiesOnly yes\n'
+} >> "$HOME/.ssh/config"
 
-Host github_${SSH_USER}
-  HostName github.com
-  IdentityFile ~/.ssh/id_ed25519_${SSH_USER}
-  User git
-  IdentitiesOnly yes
-EOF
-
-chmod 600 ~/.ssh/config
+chmod 600 "$HOME/.ssh/config"
 echo -e "${GREEN}✓ SSH config updated successfully${NC}"
 
 # Display public key
 echo -e "\n${BLUE}=== Your Public Key ===${NC}"
 echo -e "${YELLOW}Copy this key and add it to your GitHub account:${NC}\n"
-cat ~/.ssh/id_ed25519_${SSH_USER}.pub
+cat "${key_path}.pub"
 echo ""
 
 # Usage instructions
@@ -136,7 +136,7 @@ echo -e "\n${BLUE}=== Setting up Git Directory ===${NC}"
 
 # Create git directories
 echo -e "${YELLOW}→ Creating ~/git/github_${SSH_USER}/ directory...${NC}"
-mkdir -p ~/git/github_${SSH_USER}
+mkdir -p "$HOME/git/github_${SSH_USER}"
 echo -e "${GREEN}✓ Directory created: ~/git/github_${SSH_USER}${NC}"
 echo -e "${YELLOW}💡 Run: cd ~/git/github_${SSH_USER}${NC}"
 
