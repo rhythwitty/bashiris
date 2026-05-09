@@ -15,6 +15,9 @@ $(tput bold)DESCRIPTION$(tput sgr0)
     Finds and terminates the process(es) listening on the given port.
     Attempts SIGTERM first, escalates to SIGKILL if the process survives.
 
+$(tput bold)OPTIONS$(tput sgr0)
+    -h, --help      Show this help message
+
 $(tput bold)EXAMPLES$(tput sgr0)
     kill-port 3000
     iris kill-port 8080
