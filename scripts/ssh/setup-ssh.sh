@@ -86,18 +86,34 @@ else
 fi
 
 # Generate SSH key
-echo -e "\n${YELLOW}→ Generating ED25519 SSH key pair...${NC}"
 mkdir -p "$HOME/.ssh"
 chmod 700 "$HOME/.ssh"
 key_path="$HOME/.ssh/id_ed25519_${SSH_USER}"
 
-if ssh-keygen -t ed25519 -C "$EMAIL" -f "$key_path" -N "" -q; then
-    echo -e "${GREEN}✓ SSH key pair generated successfully${NC}"
-    echo -e "  Private key: $key_path"
-    echo -e "  Public key:  ${key_path}.pub"
-else
-    echo -e "${RED}✗ Failed to generate SSH key${NC}"
-    exit 1
+if [[ -f "$key_path" ]]; then
+    echo -e "\n${YELLOW}⚠️  SSH key already exists: ${key_path}${NC}"
+    read -r -p "Overwrite existing key? [y/N]: " OVERWRITE_KEY
+    case "$OVERWRITE_KEY" in
+        [yY] | [yY][eE][sS])
+            echo -e "${YELLOW}→ Overwriting existing key...${NC}"
+            ;;
+        *)
+            echo -e "${GREEN}✓ Keeping existing key.${NC}"
+            SKIP_KEYGEN=true
+            ;;
+    esac
+fi
+
+if [[ "$SKIP_KEYGEN" != true ]]; then
+    echo -e "\n${YELLOW}→ Generating ED25519 SSH key pair...${NC}"
+    if ssh-keygen -t ed25519 -C "$EMAIL" -f "$key_path" -N "" -q; then
+        echo -e "${GREEN}✓ SSH key pair generated successfully${NC}"
+        echo -e "  Private key: $key_path"
+        echo -e "  Public key:  ${key_path}.pub"
+    else
+        echo -e "${RED}✗ Failed to generate SSH key${NC}"
+        exit 1
+    fi
 fi
 
 # Set proper permissions
@@ -106,20 +122,25 @@ chmod 600 "$key_path"
 echo -e "${GREEN}✓ Permissions set successfully${NC}"
 
 # Create or update SSH config
-echo -e "\n${YELLOW}→ Adding configuration to ~/.ssh/config...${NC}"
+CONFIG_FILE="$HOME/.ssh/config"
+touch "$CONFIG_FILE"
+chmod 600 "$CONFIG_FILE"
 
-# Append to SSH config
-{
-    printf '\n'
-    printf 'Host github_%s\n' "$SSH_USER"
-    printf '  HostName github.com\n'
-    printf '  IdentityFile %s\n' "$key_path"
-    printf '  User git\n'
-    printf '  IdentitiesOnly yes\n'
-} >> "$HOME/.ssh/config"
-
-chmod 600 "$HOME/.ssh/config"
-echo -e "${GREEN}✓ SSH config updated successfully${NC}"
+if grep -q "Host github_${SSH_USER}" "$CONFIG_FILE"; then
+    echo -e "\n${GREEN}✓ SSH config already contains host: github_${SSH_USER}. Skipping.${NC}"
+else
+    echo -e "\n${YELLOW}→ Adding configuration to ~/.ssh/config...${NC}"
+    # Append to SSH config
+    {
+        printf '\n'
+        printf 'Host github_%s\n' "$SSH_USER"
+        printf '  HostName github.com\n'
+        printf '  IdentityFile %s\n' "$key_path"
+        printf '  User git\n'
+        printf '  IdentitiesOnly yes\n'
+    } >> "$CONFIG_FILE"
+    echo -e "${GREEN}✓ SSH config updated successfully${NC}"
+fi
 
 # Display public key
 echo -e "\n${BLUE}=== Your Public Key ===${NC}"
