@@ -1,5 +1,39 @@
 # Changelog
 
+## 1.0.0 (2026-05-10)
+
+
+### Features
+
+* add a seperate Uninstall script ([37e018d](https://github.com/rhythwitty/bashrepo/commit/37e018d14aa74c4ba61cd0e689d2314a9a2e1b15))
+* add Pre-commit hook that runs `make check` ([7b717b5](https://github.com/rhythwitty/bashrepo/commit/7b717b52b79c125961f44f2da23291de73d6e097))
+* add shellcheck and shfmt ([1002ef7](https://github.com/rhythwitty/bashrepo/commit/1002ef7e42c7e8126b5c3f333371df7d9d67c7e1))
+* auto postfix gmail ([4d0750c](https://github.com/rhythwitty/bashrepo/commit/4d0750c6bb8f10d63108994aafa5e065661a3f5a))
+* documentation on Conventional Commits ([4043855](https://github.com/rhythwitty/bashrepo/commit/404385538bb79c643c2da488d2be95fb54356993))
+* iris self-update script ([9c2b37e](https://github.com/rhythwitty/bashrepo/commit/9c2b37ea737707c9e9c37a48197ba333e888e51b))
+* make `verify-ssh` shorter status labels ([6e353aa](https://github.com/rhythwitty/bashrepo/commit/6e353aad114aec8219cbac6bcd377ba4b9241939))
+* remove --update self option ([d508a00](https://github.com/rhythwitty/bashrepo/commit/d508a004042586764fe32632bc2c0f2d579841e7))
+* support iris --update-deps ([b6ee4a0](https://github.com/rhythwitty/bashrepo/commit/b6ee4a09f4b761ba21161d31ae300ef0b775fca9))
+
+
+### Bug Fixes
+
+* add releasing reference ([b8b0de2](https://github.com/rhythwitty/bashrepo/commit/b8b0de244b104ebaafe34df6d6ca39867c1ead3d))
+* clean up shellcheck warnings ([f65b918](https://github.com/rhythwitty/bashrepo/commit/f65b918af3613e6b9df8a47fbfaac8c53d7906d6))
+* fix playlist donwload with `-p` ([4b1068d](https://github.com/rhythwitty/bashrepo/commit/4b1068d715b6c8562bde82c73017c962b352a7f9))
+* help msg consistent across the suite ([9f4ed5c](https://github.com/rhythwitty/bashrepo/commit/9f4ed5c73ba22ca37a763fd1a33d790ec1615ea5))
+* HOST ([154a49b](https://github.com/rhythwitty/bashrepo/commit/154a49b900887d17a976e413870767a5c103cf59))
+* let help text have tone identical ([a2e1a79](https://github.com/rhythwitty/bashrepo/commit/a2e1a79574afa157931bb12229993b574a04ed49))
+* make fmt ([7a31334](https://github.com/rhythwitty/bashrepo/commit/7a31334b12fbaec4baf94adbf93c5eaba384f10d))
+* RED color variable in ssh setup script ([dd1f29e](https://github.com/rhythwitty/bashrepo/commit/dd1f29e2e165bca810bc513530d29b24403bef6c))
+* releasing.md ([1ab86b8](https://github.com/rhythwitty/bashrepo/commit/1ab86b845f971467da92af8ed1564cc744013778))
+* self update script ([cfde48d](https://github.com/rhythwitty/bashrepo/commit/cfde48d27f86200e80b999eabbc3ac310e1f7bdc))
+* setup-ssh non-standard whitespace before SSH_USER ([75b2c8d](https://github.com/rhythwitty/bashrepo/commit/75b2c8daf8b4503a8c6dabdb0e43a8d7b170e514))
+* ShellCheck ([9ebf3e8](https://github.com/rhythwitty/bashrepo/commit/9ebf3e8714f8a6f1d7d8572ba0cedbe0675d0d25))
+* support `setup-ssh ([3c08889](https://github.com/rhythwitty/bashrepo/commit/3c0888964cc9a1c9b4276845e9d6dacb1e363967))
+* unify all help message format, remove SCRIPT_URL ([8a666db](https://github.com/rhythwitty/bashrepo/commit/8a666db7a0382a9ee22cd12b7059beb8cf448d13))
+* youtube URL automatically clean ([b19c926](https://github.com/rhythwitty/bashrepo/commit/b19c9261870ee0f6f851235e1ddcbec10845ae29))
+
 ## [1.6.0](https://github.com/rhythwitty/bashrepo/compare/v1.5.1...v1.6.0) (2026-05-09)
 
 
