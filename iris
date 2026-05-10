@@ -106,7 +106,7 @@ case "$1" in
         fi
 
         echo "Updating iris and scripts..."
-        curl -sL "$IRIS_UPDATE_URL" | bash
+        bash <(curl -sL "$IRIS_UPDATE_URL")
         ;;
     --update-deps)
         echo "Updating script dependencies..."
