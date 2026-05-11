@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.0.2](https://github.com/rhythwitty/bashiris/compare/v2.0.1...v2.0.2) (2026-05-11)
+
+
+### Bug Fixes
+
+* change repo URL to rhythwitty/bashiris ([3deeff9](https://github.com/rhythwitty/bashiris/commit/3deeff972d47d9d3068d3a8d5c9dac56fe2653c8))
+
 ## [2.0.1](https://github.com/rhythwitty/bashiris/compare/v2.0.0...v2.0.1) (2026-05-10)
 
 
