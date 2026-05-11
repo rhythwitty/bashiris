@@ -2,7 +2,7 @@
 
 # ─────────────────────────────────────────────
 #  uninstall.sh — iris uninstaller
-#  https://github.com/rhythwitty/bashrepo
+#  https://github.com/rhythwitty/bashiris
 # ─────────────────────────────────────────────
 
 IRIS_BIN="/usr/local/bin/iris"

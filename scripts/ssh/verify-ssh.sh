@@ -2,7 +2,7 @@
 
 # ─────────────────────────────────────────────
 #  verify-ssh — Verify GitHub SSH host aliases
-#  https://github.com/rhythwitty/bashrepo
+#  https://github.com/rhythwitty/bashiris
 # ─────────────────────────────────────────────
 # IRIS_DESC: Verify GitHub SSH host aliases in ~/.ssh/config
 

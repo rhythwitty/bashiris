@@ -2,7 +2,7 @@
 
 # ─────────────────────────────────────────────
 #  download-yt — yt-dlp wrapper
-#  https://github.com/rhythwitty/bashrepo
+#  https://github.com/rhythwitty/bashiris
 # ─────────────────────────────────────────────
 # IRIS_DESC: Download YouTube videos via yt-dlp
 

@@ -5,7 +5,7 @@ A unified CLI for utility scripts on macOS and Linux.
 ## Install
 
 ```bash
-curl -sL https://github.com/rhythwitty/bashrepo/raw/main/install.sh | bash
+curl -sL https://github.com/rhythwitty/bashiris/raw/main/install.sh | bash
 ```
 
 The installer detects your OS, installs only compatible scripts, and saves the release manifest used for version checks.
@@ -15,7 +15,7 @@ The installer detects your OS, installs only compatible scripts, and saves the r
 To remove `iris` and all its installed scripts from your system, run:
 
 ```bash
-curl -sL https://github.com/rhythwitty/bashrepo/raw/main/uninstall.sh | bash
+curl -sL https://github.com/rhythwitty/bashiris/raw/main/uninstall.sh | bash
 ```
 
 ## Usage

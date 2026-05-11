@@ -2,7 +2,7 @@
 
 # ─────────────────────────────────────────────
 #  check-power — Mac power configuration summary
-#  https://github.com/rhythwitty/bashrepo
+#  https://github.com/rhythwitty/bashiris
 # ─────────────────────────────────────────────
 # IRIS_DESC: Show Mac power, sleep, and remote login configuration
 # IRIS_PLATFORM: macos

@@ -2,10 +2,10 @@
 
 # ─────────────────────────────────────────────
 #  install.sh — iris installer
-#  https://github.com/rhythwitty/bashrepo
+#  https://github.com/rhythwitty/bashiris
 # ─────────────────────────────────────────────
 
-REPO_URL="https://github.com/rhythwitty/bashrepo/raw/main"
+REPO_URL="https://github.com/rhythwitty/bashiris/raw/main"
 IRIS_BIN="/usr/local/bin/iris"
 IRIS_LIB="/usr/local/lib/iris"
 PLATFORM=$(uname -s)

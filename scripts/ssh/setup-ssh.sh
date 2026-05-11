@@ -2,7 +2,7 @@
 
 # ─────────────────────────────────────────────
 #  setup-ssh — Generate SSH keys and configure GitHub access
-#  https://github.com/rhythwitty/bashrepo
+#  https://github.com/rhythwitty/bashiris
 # ─────────────────────────────────────────────
 # IRIS_DESC: Generate SSH keys and configure GitHub access
 

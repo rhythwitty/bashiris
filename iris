@@ -2,13 +2,13 @@
 
 # ─────────────────────────────────────────────
 #  iris — unified CLI dispatcher
-#  https://github.com/rhythwitty/bashrepo
+#  https://github.com/rhythwitty/bashiris
 # ─────────────────────────────────────────────
 
 IRIS_LIB_DIR="/usr/local/lib/iris"
-IRIS_UPDATE_URL="https://github.com/rhythwitty/bashrepo/raw/main/install.sh"
+IRIS_UPDATE_URL="https://github.com/rhythwitty/bashiris/raw/main/install.sh"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-IRIS_MANIFEST_URL="https://github.com/rhythwitty/bashrepo/raw/main/.release-please-manifest.json"
+IRIS_MANIFEST_URL="https://github.com/rhythwitty/bashiris/raw/main/.release-please-manifest.json"
 
 read_version_from_manifest() {
     local manifest_path="$1"
