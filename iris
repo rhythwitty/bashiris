@@ -5,7 +5,13 @@
 #  https://github.com/rhythwitty/bashiris
 # ─────────────────────────────────────────────
 
-IRIS_LIB_DIR="/usr/local/lib/iris"
+# Detect platform and set library directory
+if [[ "$OSTYPE" == "msys" || "$OSTYPE" == "win32" || "$OSTYPE" == "cygwin" ]]; then
+    IRIS_LIB_DIR="$HOME/.local/lib/iris"
+else
+    IRIS_LIB_DIR="/usr/local/lib/iris"
+fi
+
 IRIS_UPDATE_URL="https://github.com/rhythwitty/bashiris/raw/main/install.sh"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 IRIS_MANIFEST_URL="https://github.com/rhythwitty/bashiris/raw/main/.release-please-manifest.json"
