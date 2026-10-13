@@ -28,6 +28,12 @@ else
     echo "  → $IRIS_LIB not found, skipping."
 fi
 
+# Remove installed power_cleaner Python package (belt-and-suspenders if lib dir already gone)
+if [ -d "$IRIS_LIB/power_cleaner" ]; then
+    echo "  → Removing $IRIS_LIB/power_cleaner"
+    sudo rm -rf "$IRIS_LIB/power_cleaner"
+fi
+
 echo ""
 echo "✅  iris has been uninstalled."
 echo ""

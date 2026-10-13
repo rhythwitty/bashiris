@@ -36,6 +36,7 @@ iris --update-deps    # update external dependencies for all scripts
 | `check-power` | ✅ | ❌ | Show power, sleep, and remote login config |
 | `download-yt` | ✅ | ✅ | Download YouTube videos via `yt-dlp` |
 | `kill-port` | ✅ | ✅ | Kill the process running on a given port |
+| `power-clean` | ✅ | ✅ | Safe ChromePower storage analysis and cache cleanup |
 | `setup-ssh` | ✅ | ✅ | Generate SSH keys and configure GitHub access |
 | `verify-ssh` | ✅ | ✅ | Verify GitHub SSH host aliases from `~/.ssh/config` |
 
@@ -47,6 +48,27 @@ iris --update-deps    # update external dependencies for all scripts
 4. Register the path in `SCRIPTS_COMMON` or `SCRIPTS_MACOS` in `install.sh`.
 
 *Note: All scripts are flattened into `/usr/local/lib/iris/` during installation.*
+
+### Commands with Python dependencies
+
+If a command wraps a Python package (like `power-clean`), place the package under `scripts/<package_name>/` and install it alongside the shell script in `install.sh`. The shell wrapper sets `PYTHONPATH` at runtime so no `pip install` is needed.
+
+## Development
+
+```bash
+# Shell formatting & linting
+make fmt-check
+make lint
+
+# Python linting (requires ruff: pip install ruff)
+make py-lint
+
+# Python tests
+make py-test
+
+# Run everything
+make check
+```
 
 ## Documentation
 

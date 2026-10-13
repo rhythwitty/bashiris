@@ -1,0 +1,19 @@
+[project]
+name = "bashiris-power-cleaner"
+version = "0.2.0"
+description = "ChromePower storage analysis and cache cleanup — part of the iris CLI"
+requires-python = ">=3.10"
+dependencies = []
+
+[project.scripts]
+power-cleaner = "power_cleaner.cli:main"
+
+[tool.ruff]
+line-length = 88
+target-version = "py310"
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "UP"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
