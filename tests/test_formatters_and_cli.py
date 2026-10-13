@@ -119,7 +119,7 @@ class TestFormattersAndCLI(unittest.TestCase):
         text = render_why_explanation(item)
         self.assertIn("Default/Service Worker", text)
         self.assertIn("REVIEW", text)
-        self.assertIn("Suggested action", text)
+        self.assertIn("Suggested Action", text)
 
     def test_cli_dry_run_low_risk(self):
         fixture_root = Path(__file__).parent / "fixtures" / "chrome_root"
@@ -173,7 +173,7 @@ class TestFormattersAndCLI(unittest.TestCase):
 
             output = buf.getvalue()
             self.assertIn("Confirmation bypassed (--yes)", output)
-            self.assertIn("Clean Low-Risk Caches Summary", output)
+            self.assertIn("Clean Low-Risk Caches — Summary", output)
             self.assertIn("Cleanup Complete", output)
 
     def test_cli_clean_low_risk_cancels_on_rejected_prompt(self):
@@ -190,7 +190,7 @@ class TestFormattersAndCLI(unittest.TestCase):
                 main(["--root", str(tmp_root), "--clean-low-risk"])
 
             output = buf.getvalue()
-            self.assertIn("Clean Low-Risk Caches Summary", output)
+            self.assertIn("Clean Low-Risk Caches — Summary", output)
             self.assertIn("Cleanup cancelled", output)
 
 

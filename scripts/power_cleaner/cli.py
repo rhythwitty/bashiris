@@ -10,8 +10,10 @@ from power_cleaner import __version__
 from power_cleaner.cleanup import execute_cleanup_plan, prompt_confirmation
 from power_cleaner.config import get_chrome_root
 from power_cleaner.formatters import (
+    Spinner,
     format_size,
     output_json,
+    render_banner,
     render_browser_details,
     render_browser_table,
     render_largest_cleanup_opportunities,
@@ -36,6 +38,15 @@ from power_cleaner.planner import (
 from power_cleaner.scanner import ProfileScanner
 
 
+def _prompt(label: str = "") -> str:
+    """Styled input prompt."""
+    arrow = f"{theme.CYAN}❯{theme.RESET}" if theme.enabled else ">"
+    try:
+        return input(f"  {arrow} {label}").strip()
+    except (EOFError, KeyboardInterrupt):
+        return ""
+
+
 def choose_browser_interactive(
     reports: list[BrowserReport],
     current_sort: str = "size",
@@ -46,15 +57,13 @@ def choose_browser_interactive(
     while True:
         print(render_browser_table(reports, sort_by=sort_mode))
         print()
-        print(
-            "Commands: [1-"
-            + str(len(reports))
-            + "] inspect  |  [s]ize [c]leanup [r]eview [u]nknown [n]ame sort  |  [Enter] back"
-        )
-        try:
-            choice = input("❯ ").strip()
-        except (EOFError, KeyboardInterrupt):
-            return None
+        n = len(reports)
+        hint_num = theme.accent(f"[1-{n}]")
+        hint_enter = theme.muted("[Enter] back")
+        sort_hint = theme.muted("[s]ize [c]leanup [r]eview [u]nknown [n]ame to sort")
+        print(f"  {hint_num} inspect browser  │  {sort_hint}  │  {hint_enter}")
+        print()
+        choice = _prompt()
 
         if not choice:
             return None
@@ -95,7 +104,9 @@ def choose_browser_interactive(
 
             if 1 <= idx <= len(sorted_reports):
                 return sorted_reports[idx - 1]
-            print(f"Please enter a number between 1 and {len(reports)}.")
+            print(
+                f"  {theme.review('!')}  Enter a number between 1 and {len(reports)}."
+            )
             continue
 
         # Check if browser name was entered directly
@@ -103,7 +114,7 @@ def choose_browser_interactive(
             if r.name.lower() == choice_lower:
                 return r
 
-        print("Unknown command or invalid browser selection.")
+        print(f"  {theme.muted('?')}  Unknown command or invalid browser selection.")
 
 
 def handle_browser_inspection(
@@ -117,44 +128,49 @@ def handle_browser_inspection(
     while True:
         print(render_browser_details(report))
         print()
-        print("Actions:")
-        print("  1. Show details (refresh view)")
+
+        # ── Action menu ─────────────────────────────────────────────────────
+        def _action(num: str, label: str, note: str = "") -> str:
+            n_str = theme.accent(f"  [{num}]")
+            note_str = f"  {theme.muted(note)}" if note else ""
+            return f"{n_str}  {label}{note_str}"
+
+        print(_action("1", "Refresh view"))
 
         if report.can_clean:
-            print(f"  2. Clean safe caches ({format_size(report.safe_size)})")
+            print(
+                _action(
+                    "2", theme.safe("Clean safe caches"), format_size(report.safe_size)
+                )
+            )
         elif report.status == BrowserStatus.ACTIVE:
-            print(
-                f"  2. Clean safe caches {theme.active('[DISABLED: Browser is ACTIVE]')}"
-            )
+            print(_action("2", "Clean safe caches", "disabled — browser is ACTIVE"))
         elif report.status == BrowserStatus.UNKNOWN:
-            print(
-                f"  2. Clean safe caches {theme.review('[DISABLED: Status is UNKNOWN]')}"
-            )
+            print(_action("2", "Clean safe caches", "disabled — status UNKNOWN"))
         else:
-            print("  2. Clean safe caches [No safe caches to clean]")
+            print(_action("2", "Clean safe caches", "nothing to clean"))
 
         if report.can_clean_low_risk:
-            print(f"  3. Clean low-risk caches ({format_size(report.low_risk_size)})")
+            print(
+                _action(
+                    "3",
+                    theme.low_risk("Clean low-risk caches"),
+                    format_size(report.low_risk_size),
+                )
+            )
         elif report.status == BrowserStatus.ACTIVE:
-            print(
-                f"  3. Clean low-risk caches {theme.active('[DISABLED: Browser is ACTIVE]')}"
-            )
+            print(_action("3", "Clean low-risk caches", "disabled — browser is ACTIVE"))
         elif report.status == BrowserStatus.UNKNOWN:
-            print(
-                f"  3. Clean low-risk caches {theme.review('[DISABLED: Status is UNKNOWN]')}"
-            )
+            print(_action("3", "Clean low-risk caches", "disabled — status UNKNOWN"))
         else:
-            print("  3. Clean low-risk caches [No low-risk caches to clean]")
+            print(_action("3", "Clean low-risk caches", "nothing to clean"))
 
-        print("  4. Show review items with explanations")
-        print("  5. Explain classification for an item (Why?)")
-        print("  6. Back to browser list (Enter)")
+        print(_action("4", "Show review items"))
+        print(_action("5", "Explain item classification  (Why?)"))
+        print(_action("6", "Back", "[Enter]"))
         print()
 
-        try:
-            choice = input("❯ ").strip()
-        except (EOFError, KeyboardInterrupt):
-            return False
+        choice = _prompt()
 
         if not choice or choice in ("6", "b", "back"):
             return False
@@ -166,109 +182,123 @@ def handle_browser_inspection(
             if not report.can_clean:
                 if report.status == BrowserStatus.ACTIVE:
                     print(
-                        f"\n⚠️  {theme.active('BLOCKED')}: Chrome is running with profile {report.name}."
+                        f"\n  {theme.active('⊘ BLOCKED')} — Chrome is running with profile {theme.bold(report.name)}."
                     )
                 elif report.status == BrowserStatus.UNKNOWN:
                     print(
-                        f"\n⚠️  {theme.review('BLOCKED')}: Profile {report.name} activity is unknown."
+                        f"\n  {theme.review('⊘ BLOCKED')} — Profile {theme.bold(report.name)} activity is unknown."
                     )
                 else:
-                    print("\nNothing safe to clean in this profile.")
-                try:
-                    input("\nPress Enter to continue...")
-                except (EOFError, KeyboardInterrupt):
-                    pass
+                    print(
+                        f"\n  {theme.muted('Nothing safe to clean in this profile.')}"
+                    )
+                _press_enter()
                 continue
 
             # Confirm cleanup for single profile
             plan = create_cleanup_plan_for_browser(report)
-            print(f"\nYou are about to clean safe caches in {report.name}:")
-            for it in report.safe_items:
-                if it.size > 0:
-                    print(f"  {format_size(it.size):>10}  {it.relative_path}")
             print(
-                f"\nTotal reclaimable: {theme.safe(format_size(plan.total_bytes_to_clean))}"
+                f"\n  {theme.bold('Safe cache cleanup for')} {theme.highlight(report.name)}:"
+            )
+            print()
+            for it in sorted(report.safe_items, key=lambda x: x.size, reverse=True):
+                if it.size > 0:
+                    print(
+                        f"    {theme.safe(format_size(it.size)):>12}  {theme.muted(it.relative_path)}"
+                    )
+            print()
+            print(
+                f"  {theme.muted('Total reclaimable:')}  {theme.safe(format_size(plan.total_bytes_to_clean))}"
             )
 
-            confirmed = prompt_confirmation('Type "clean" to confirm: ')
+            confirmed = prompt_confirmation(
+                '  Type "clean" to confirm, or Enter to cancel: '
+            )
             if not confirmed:
-                print("\nCleanup cancelled.")
+                print(f"\n  {theme.muted('Cleanup cancelled.')}")
                 continue
 
             result = execute_cleanup_plan(plan, dry_run=False)
-            print(f"\n✓ Cleaned {theme.safe(format_size(result.deleted_bytes))}")
+            print(
+                f"\n  {theme.safe('✓')} Cleaned {theme.safe(format_size(result.deleted_bytes))}"
+            )
             if result.errors:
-                print(f"Warnings/errors ({len(result.errors)}):")
+                print(f"  {theme.review('Warnings')} ({len(result.errors)}):")
                 for err in result.errors[:5]:
-                    print(f"  {err}")
+                    print(f"    {theme.muted(err)}")
 
-            try:
-                input("\nPress Enter to continue...")
-            except (EOFError, KeyboardInterrupt):
-                pass
+            _press_enter()
             return True
 
         if choice == "3":
             if not report.can_clean_low_risk:
                 if report.status == BrowserStatus.ACTIVE:
                     print(
-                        f"\n⚠️  {theme.active('BLOCKED')}: Chrome is running with profile {report.name}."
+                        f"\n  {theme.active('⊘ BLOCKED')} — Chrome is running with profile {theme.bold(report.name)}."
                     )
                 elif report.status == BrowserStatus.UNKNOWN:
                     print(
-                        f"\n⚠️  {theme.review('BLOCKED')}: Profile {report.name} activity is unknown."
+                        f"\n  {theme.review('⊘ BLOCKED')} — Profile {theme.bold(report.name)} activity is unknown."
                     )
                 else:
-                    print("\nNothing low-risk to clean in this profile.")
-                try:
-                    input("\nPress Enter to continue...")
-                except (EOFError, KeyboardInterrupt):
-                    pass
+                    print(
+                        f"\n  {theme.muted('Nothing low-risk to clean in this profile.')}"
+                    )
+                _press_enter()
                 continue
 
             # Confirm low-risk cleanup for single profile
             plan = create_low_risk_cleanup_plan_for_browser(report)
+            print()
             print(
-                f"\n⚠️  {theme.review('Notice')}: Low-risk items include component downloads, ML models, and"
+                f"  {theme.review('Notice:')} Low-risk items include component downloads, ML models, and"
             )
-            print("   safe experiment seeds. Chrome will redownload them when needed.")
-            print(f"\nYou are about to clean low-risk caches in {report.name}:")
-            for it in report.low_risk_items:
-                if it.size > 0:
-                    print(f"  {format_size(it.size):>10}  {it.relative_path}")
+            print("  safe experiment seeds. Chrome will redownload them when needed.")
             print(
-                f"\nTotal reclaimable: {theme.safe(format_size(plan.total_bytes_to_clean))}"
+                f"\n  {theme.bold('Low-risk cache cleanup for')} {theme.highlight(report.name)}:"
+            )
+            print()
+            for it in sorted(report.low_risk_items, key=lambda x: x.size, reverse=True):
+                if it.size > 0:
+                    print(
+                        f"    {theme.low_risk(format_size(it.size)):>12}  {theme.muted(it.relative_path)}"
+                    )
+            print()
+            print(
+                f"  {theme.muted('Total reclaimable:')}  {theme.safe(format_size(plan.total_bytes_to_clean))}"
             )
 
-            confirmed = prompt_confirmation('Type "clean" to confirm: ')
+            confirmed = prompt_confirmation(
+                '  Type "clean" to confirm, or Enter to cancel: '
+            )
             if not confirmed:
-                print("\nCleanup cancelled.")
+                print(f"\n  {theme.muted('Cleanup cancelled.')}")
                 continue
 
             result = execute_cleanup_plan(plan, dry_run=False)
-            print(f"\n✓ Cleaned {theme.safe(format_size(result.deleted_bytes))}")
+            print(
+                f"\n  {theme.safe('✓')} Cleaned {theme.safe(format_size(result.deleted_bytes))}"
+            )
             if result.errors:
-                print(f"Warnings/errors ({len(result.errors)}):")
+                print(f"  {theme.review('Warnings')} ({len(result.errors)}):")
                 for err in result.errors[:5]:
-                    print(f"  {err}")
+                    print(f"    {theme.muted(err)}")
 
-            try:
-                input("\nPress Enter to continue...")
-            except (EOFError, KeyboardInterrupt):
-                pass
+            _press_enter()
             return True
 
         if choice == "4":
-            print(f"\n{theme.bold('Review items for')} {report.name}:")
+            print(
+                f"\n  {theme.bold('Review items for')} {theme.highlight(report.name)}:"
+            )
             if not report.review_items:
-                print("  No review items present.")
-            for it in report.review_items:
-                print(f"\n  {it.relative_path} — {format_size(it.size)}")
-                print(f"    {it.rationale or it.description}")
-            try:
-                input("\nPress Enter to continue...")
-            except (EOFError, KeyboardInterrupt):
-                pass
+                print(f"  {theme.muted('No review items present.')}")
+            for it in sorted(report.review_items, key=lambda x: x.size, reverse=True):
+                print(
+                    f"\n  {theme.review(format_size(it.size)):>12}  {it.relative_path}"
+                )
+                print(f"  {'':>12}  {theme.muted(it.rationale or it.description)}")
+            _press_enter()
 
         elif choice == "5":
             all_items: list = []
@@ -276,22 +306,72 @@ def handle_browser_inspection(
                 all_items.extend(report.items_by_safety.get(level, []))
 
             if not all_items:
-                print("\nNo items to explain.")
+                print(f"\n  {theme.muted('No items to explain.')}")
                 continue
 
-            print("\nSelect an item to explain:")
+            print(f"\n  {theme.bold('Select an item to explain:')}")
+            print()
             for i, it in enumerate(all_items, 1):
-                print(f"  {i:>2}. {it.relative_path:<35} [{it.safety.value}]")
-            try:
-                item_choice = input("\nItem number: ").strip()
-                if item_choice.isdigit() and 1 <= int(item_choice) <= len(all_items):
-                    selected = all_items[int(item_choice) - 1]
-                    print(render_why_explanation(selected))
-                else:
-                    print("Invalid item number.")
-                input("\nPress Enter to continue...")
-            except (EOFError, KeyboardInterrupt):
-                pass
+                print(
+                    f"  {theme.muted(str(i)):>2}  {it.relative_path:<35}  "
+                    f"{theme.safety_label(it.safety)}"
+                )
+            print()
+            item_choice = _prompt("Item number: ")
+            if item_choice.isdigit() and 1 <= int(item_choice) <= len(all_items):
+                selected = all_items[int(item_choice) - 1]
+                print(render_why_explanation(selected))
+            else:
+                print(f"  {theme.muted('Invalid item number.')}")
+            _press_enter()
+
+
+def _press_enter(label: str = "Press Enter to continue") -> None:
+    """Wait for user to press Enter."""
+    arrow = f"{theme.CYAN}↵{theme.RESET}" if theme.enabled else "↵"
+    try:
+        input(f"\n  {arrow}  {theme.muted(label)}…  ")
+    except (EOFError, KeyboardInterrupt):
+        pass
+
+
+def _render_batch_summary_header(plan, title: str) -> None:
+    """Print the batch cleanup plan header."""
+    W = 56
+    print()
+    print(f"  {theme.bold(title)}")
+    print(f"  {'═' * W}")
+    print(
+        f"  {theme.muted('Browsers to clean:')}    "
+        f"{theme.bold(str(len(plan.targeted_browsers)))}"
+    )
+    print(
+        f"  {theme.muted('Storage to reclaim:')}   "
+        f"{theme.safe(format_size(plan.total_bytes_to_clean))}"
+    )
+    print()
+
+    sorted_targets = sorted(
+        plan.browser_plans, key=lambda p: p.total_bytes, reverse=True
+    )
+    print(f"  {theme.muted('Largest opportunities:')}")
+    for bp in sorted_targets[:5]:
+        bar_w = round(bp.total_bytes / max(t.total_bytes for t in sorted_targets) * 14)
+        bar = theme.safe("█" * bar_w) + theme.muted("░" * (14 - bar_w))
+        print(f"    {bp.report.name:<22}  {format_size(bp.total_bytes):>10}  {bar}")
+
+    if plan.skipped_active:
+        print(f"\n  {theme.active('Active (skipped)')} — {len(plan.skipped_active)}:")
+        for r in plan.skipped_active:
+            print(f"    {theme.muted(r.name)}  (PID {r.active_pid})")
+
+    if plan.skipped_unknown:
+        print(
+            f"\n  {theme.review('Unknown status (skipped)')} — {len(plan.skipped_unknown)}:"
+        )
+        for r in plan.skipped_unknown:
+            print(f"    {theme.muted(r.name)}")
+    print()
 
 
 def handle_batch_safe_cleanup(
@@ -304,80 +384,50 @@ def handle_batch_safe_cleanup(
     plan = create_cleanup_plan_for_all(aggregate)
 
     if plan.is_empty:
-        print("\nNo safe caches available to clean across inactive browsers.")
+        print(
+            f"\n  {theme.muted('No safe caches available to clean across inactive browsers.')}"
+        )
         if interactive:
-            try:
-                input("\nPress Enter to continue...")
-            except (EOFError, KeyboardInterrupt):
-                pass
+            _press_enter()
         return False
 
-    print("\n" + theme.bold("Clean Safe Caches Summary"))
-    print("═" * 45)
-    print(f"Inactive browsers to clean: {theme.bold(str(len(plan.targeted_browsers)))}")
-    print(
-        f"Safe storage to reclaim:    {theme.safe(format_size(plan.total_bytes_to_clean))}"
-    )
-    print()
+    _render_batch_summary_header(plan, "Clean Safe Caches — Summary")
 
-    # Show largest profiles in cleanup plan
-    sorted_targets = sorted(
-        plan.browser_plans, key=lambda p: p.total_bytes, reverse=True
-    )
-    print("Largest opportunities:")
-    for bp in sorted_targets[:5]:
-        print(f"  {bp.report.name:<25} {format_size(bp.total_bytes):>10}")
-
-    if plan.skipped_active:
-        print(
-            f"\n{theme.active('Active browsers skipped')} ({len(plan.skipped_active)}):"
-        )
-        for r in plan.skipped_active:
-            print(f"  {r.name} (PID {r.active_pid})")
-
-    if plan.skipped_unknown:
-        print(
-            f"\n{theme.review('Unknown status browsers skipped')} ({len(plan.skipped_unknown)}):"
-        )
-        for r in plan.skipped_unknown:
-            print(f"  {r.name}")
-
-    print()
     if not auto_confirm:
-        confirmed = prompt_confirmation('Type "clean" to confirm batch cleanup: ')
+        confirmed = prompt_confirmation('  Type "clean" to confirm batch cleanup: ')
         if not confirmed:
-            print("\nCleanup cancelled.")
+            print(f"\n  {theme.muted('Cleanup cancelled.')}")
             if interactive:
-                try:
-                    input("\nPress Enter to continue...")
-                except (EOFError, KeyboardInterrupt):
-                    pass
+                _press_enter()
             return False
     else:
-        print("Confirmation bypassed (--yes).")
+        print(f"  {theme.muted('Confirmation bypassed (--yes).')}")
 
-    print("\nCleaning safe caches...")
+    print(f"  {theme.accent('⟳')}  Cleaning safe caches…")
     result = execute_cleanup_plan(plan, dry_run=False)
 
-    print("\n" + theme.bold("Cleanup Complete"))
-    print("─" * 30)
-    print(f"Deleted:  {theme.safe(format_size(result.deleted_bytes))}")
-    print(f"Profiles: {result.cleaned_profiles_count}")
+    W = 30
+    print()
+    print(f"  {theme.bold('Cleanup Complete')}")
+    print(f"  {'─' * W}")
     print(
-        f"Skipped:  {result.skipped_active_count} active, {result.skipped_unknown_count} unknown"
+        f"  {theme.muted('Deleted:')}   {theme.safe(format_size(result.deleted_bytes))}"
     )
-    print(f"Errors:   {len(result.errors)}")
-
+    print(f"  {theme.muted('Profiles:')}  {result.cleaned_profiles_count}")
+    print(
+        f"  {theme.muted('Skipped:')}   "
+        f"{result.skipped_active_count} active, "
+        f"{result.skipped_unknown_count} unknown"
+    )
     if result.errors:
-        print("\nErrors encountered:")
+        print(f"  {theme.review('Errors:')}    {len(result.errors)}")
         for err in result.errors[:10]:
-            print(f"  {err}")
+            print(f"    {theme.muted(err)}")
+    else:
+        print(f"  {theme.muted('Errors:')}    {theme.safe('none')}")
 
     if interactive:
-        try:
-            input("\nPress Enter to return to main menu...")
-        except (EOFError, KeyboardInterrupt):
-            pass
+        _press_enter("Press Enter to return to main menu")
 
     return True
 
@@ -392,91 +442,73 @@ def handle_batch_low_risk_cleanup(
     plan = create_low_risk_cleanup_plan_for_all(aggregate)
 
     if plan.is_empty:
-        print("\nNo low-risk caches available to clean across inactive browsers.")
+        print(
+            f"\n  {theme.muted('No low-risk caches available to clean across inactive browsers.')}"
+        )
         if interactive:
-            try:
-                input("\nPress Enter to continue...")
-            except (EOFError, KeyboardInterrupt):
-                pass
+            _press_enter()
         return False
 
-    print("\n" + theme.bold("Clean Low-Risk Caches Summary"))
-    print("═" * 45)
     print(
-        f"⚠️  {theme.review('Notice')}: Low-risk items include component downloads, ML models, and"
+        f"\n  {theme.review('Notice:')} Low-risk items include component downloads, ML models, and"
     )
     print(
-        "   safe experiment seeds. Chrome will automatically redownload them when needed."
+        "  safe experiment seeds. Chrome will automatically redownload them when needed."
     )
-    print()
-    print(f"Inactive browsers to clean: {theme.bold(str(len(plan.targeted_browsers)))}")
-    print(
-        f"Low-risk storage to reclaim: {theme.safe(format_size(plan.total_bytes_to_clean))}"
-    )
-    print()
+    _render_batch_summary_header(plan, "Clean Low-Risk Caches — Summary")
 
-    # Show largest profiles in cleanup plan
-    sorted_targets = sorted(
-        plan.browser_plans, key=lambda p: p.total_bytes, reverse=True
-    )
-    print("Largest opportunities:")
-    for bp in sorted_targets[:5]:
-        print(f"  {bp.report.name:<25} {format_size(bp.total_bytes):>10}")
-
-    if plan.skipped_active:
-        print(
-            f"\n{theme.active('Active browsers skipped')} ({len(plan.skipped_active)}):"
-        )
-        for r in plan.skipped_active:
-            print(f"  {r.name} (PID {r.active_pid})")
-
-    if plan.skipped_unknown:
-        print(
-            f"\n{theme.review('Unknown status browsers skipped')} ({len(plan.skipped_unknown)}):"
-        )
-        for r in plan.skipped_unknown:
-            print(f"  {r.name}")
-
-    print()
     if not auto_confirm:
         confirmed = prompt_confirmation(
-            'Type "clean" to confirm batch low-risk cleanup: '
+            '  Type "clean" to confirm batch low-risk cleanup: '
         )
         if not confirmed:
-            print("\nCleanup cancelled.")
+            print(f"\n  {theme.muted('Cleanup cancelled.')}")
             if interactive:
-                try:
-                    input("\nPress Enter to continue...")
-                except (EOFError, KeyboardInterrupt):
-                    pass
+                _press_enter()
             return False
     else:
-        print("Confirmation bypassed (--yes).")
+        print(f"  {theme.muted('Confirmation bypassed (--yes).')}")
 
-    print("\nCleaning low-risk caches...")
+    print(f"  {theme.accent('⟳')}  Cleaning low-risk caches…")
     result = execute_cleanup_plan(plan, dry_run=False)
 
-    print("\n" + theme.bold("Cleanup Complete"))
-    print("─" * 30)
-    print(f"Deleted:  {theme.safe(format_size(result.deleted_bytes))}")
-    print(f"Profiles: {result.cleaned_profiles_count}")
+    W = 30
+    print()
+    print(f"  {theme.bold('Cleanup Complete')}")
+    print(f"  {'─' * W}")
     print(
-        f"Skipped:  {result.skipped_active_count} active, {result.skipped_unknown_count} unknown"
+        f"  {theme.muted('Deleted:')}   {theme.safe(format_size(result.deleted_bytes))}"
     )
-    print(f"Errors:   {len(result.errors)}")
-
+    print(f"  {theme.muted('Profiles:')}  {result.cleaned_profiles_count}")
+    print(
+        f"  {theme.muted('Skipped:')}   "
+        f"{result.skipped_active_count} active, "
+        f"{result.skipped_unknown_count} unknown"
+    )
     if result.errors:
-        print("\nErrors encountered:")
+        print(f"  {theme.review('Errors:')}    {len(result.errors)}")
         for err in result.errors[:10]:
-            print(f"  {err}")
+            print(f"    {theme.muted(err)}")
+    else:
+        print(f"  {theme.muted('Errors:')}    {theme.safe('none')}")
 
     if interactive:
-        try:
-            input("\nPress Enter to return to main menu...")
-        except (EOFError, KeyboardInterrupt):
-            pass
+        _press_enter("Press Enter to return to main menu")
 
     return True
+
+
+def _rescan(
+    scanner: ProfileScanner, chrome_root, label: str = "Rescanning"
+) -> AggregateReport:
+    """Rescan with spinner feedback."""
+    spinner = Spinner(f"{label} {chrome_root}")
+    spinner.start()
+    result = scanner.scan_all(chrome_root, force=True)
+    spinner.stop(
+        f"  {theme.safe('✓')}  Scan complete — {result.browser_count} browser(s) found"
+    )
+    return result
 
 
 def main_menu(root: Path | None = None) -> None:
@@ -484,33 +516,44 @@ def main_menu(root: Path | None = None) -> None:
     scanner = ProfileScanner()
     chrome_root = get_chrome_root(root)
 
-    print(f"\nScanning ChromePower browsers in {chrome_root}...")
+    print(render_banner(__version__))
+    print()
+    spinner = Spinner(f"Scanning {chrome_root}")
+    spinner.start()
     aggregate = scanner.scan_all(chrome_root)
+    spinner.stop(
+        f"  {theme.safe('✓')}  Found {theme.bold(str(aggregate.browser_count))} browser(s)"
+    )
+
+    def _menu_item(num: str, label: str, shortcut: str = "") -> str:
+        shortcut_str = f"  {theme.muted('(' + shortcut + ')')}" if shortcut else ""
+        return f"  {theme.accent('[' + num + ']'):<18}  {label}{shortcut_str}"
 
     while True:
         print(render_overview(aggregate))
+
+        print(f"  {theme.bold('What would you like to do?')}")
         print()
-        print("What would you like to do?")
-        print()
-        print("  1. Overview (o)")
-        print("  2. Browsers (b)")
-        print("  3. Inspect browser")
-        print("  4. Clean safe caches")
-        print("  5. Clean low-risk caches")
-        print("  6. Largest cleanup opportunities")
-        print("  7. Largest unknown data")
-        print("  8. Largest review data")
-        print("  9. Refresh scan (r)")
-        print("  10. Quit (q)")
+        print(_menu_item("1", "Overview", "o"))
+        print(_menu_item("2", "Browsers", "b"))
+        print(_menu_item("3", "Inspect browser"))
+        print(_menu_item("4", theme.safe("Clean safe caches")))
+        print(_menu_item("5", theme.low_risk("Clean low-risk caches")))
+        print(_menu_item("6", "Largest cleanup opportunities"))
+        print(_menu_item("7", "Largest unknown data"))
+        print(_menu_item("8", "Largest review data"))
+        print(_menu_item("9", "Refresh scan", "r"))
+        print(_menu_item("10", "Quit", "q"))
         print()
 
         try:
-            choice = input("❯ ").strip().lower()
+            choice = _prompt()
         except (EOFError, KeyboardInterrupt):
-            print("\n\nBye.")
-            sys.exit(0)
+            choice = "q"
 
-        if choice in ("1", "o", "overview"):
+        choice = choice.lower()
+
+        if not choice or choice in ("1", "o", "overview"):
             continue
 
         elif choice in ("2", "b", "browsers"):
@@ -518,60 +561,48 @@ def main_menu(root: Path | None = None) -> None:
             if selected:
                 changed = handle_browser_inspection(selected, scanner)
                 if changed:
-                    print(f"\nRescanning {chrome_root}...")
-                    aggregate = scanner.scan_all(chrome_root, force=True)
+                    aggregate = _rescan(scanner, chrome_root)
 
         elif choice in ("3", "inspect"):
             selected = choose_browser_interactive(aggregate.reports)
             if selected:
                 changed = handle_browser_inspection(selected, scanner)
                 if changed:
-                    print(f"\nRescanning {chrome_root}...")
-                    aggregate = scanner.scan_all(chrome_root, force=True)
+                    aggregate = _rescan(scanner, chrome_root)
 
         elif choice in ("4", "clean", "clean-safe"):
             changed = handle_batch_safe_cleanup(aggregate, scanner)
             if changed:
-                print(f"\nRescanning {chrome_root}...")
-                aggregate = scanner.scan_all(chrome_root, force=True)
+                aggregate = _rescan(scanner, chrome_root)
 
         elif choice in ("5", "clean-low-risk", "low-risk"):
             changed = handle_batch_low_risk_cleanup(aggregate, scanner)
             if changed:
-                print(f"\nRescanning {chrome_root}...")
-                aggregate = scanner.scan_all(chrome_root, force=True)
+                aggregate = _rescan(scanner, chrome_root)
 
         elif choice == "6":
             print(render_largest_cleanup_opportunities(aggregate.reports))
-            try:
-                input("\nPress Enter to continue...")
-            except (EOFError, KeyboardInterrupt):
-                pass
+            _press_enter()
 
         elif choice == "7":
             print(render_largest_unknown_data(aggregate.reports))
-            try:
-                input("\nPress Enter to continue...")
-            except (EOFError, KeyboardInterrupt):
-                pass
+            _press_enter()
 
         elif choice == "8":
             print(render_largest_review_data(aggregate.reports))
-            try:
-                input("\nPress Enter to continue...")
-            except (EOFError, KeyboardInterrupt):
-                pass
+            _press_enter()
 
         elif choice in ("9", "r", "refresh"):
-            print(f"\nRefreshing scan of {chrome_root}...")
-            aggregate = scanner.scan_all(chrome_root, force=True)
+            aggregate = _rescan(scanner, chrome_root)
 
         elif choice in ("10", "q", "quit", "exit"):
-            print("Bye.")
+            print(f"\n  {theme.muted('Bye.')}")
             break
 
         else:
-            print("Unknown command.")
+            print(
+                f"  {theme.muted('?')}  Unknown command — try [1-10], [o], [b], [r], [q]."
+            )
 
 
 def main(argv: list[str] | None = None) -> None:
@@ -633,8 +664,10 @@ def main(argv: list[str] | None = None) -> None:
 
     # Dry-run mode
     if args.dry_run:
-        print(f"Performing dry run on {chrome_root}...")
+        spinner = Spinner(f"Dry-run scan on {chrome_root}")
+        spinner.start()
         aggregate = scanner.scan_all(chrome_root)
+        spinner.stop()
 
         if args.clean_low_risk and args.clean_safe:
             safety_levels = (SafetyLevel.SAFE, SafetyLevel.LOW_RISK)
@@ -648,29 +681,44 @@ def main(argv: list[str] | None = None) -> None:
 
         plan = create_cleanup_plan_for_all(aggregate, safety_levels=safety_levels)
         print(render_overview(aggregate))
-        print("\n" + theme.bold(dry_title))
-        print("═" * 45)
-        print(f"Targeted inactive profiles: {len(plan.targeted_browsers)}")
+        print()
+        print(f"  {theme.bold(dry_title)}")
+        print(f"  {'═' * 46}")
         print(
-            f"Total cache reclaimable: {theme.safe(format_size(plan.total_bytes_to_clean))}"
+            f"  {theme.muted('Targeted inactive profiles:')}  {len(plan.targeted_browsers)}"
         )
-        print(f"Skipped active profiles: {len(plan.skipped_active)}")
-        print(f"Skipped unknown profiles: {len(plan.skipped_unknown)}")
+        print(
+            f"  {theme.muted('Total cache reclaimable:')}     {theme.safe(format_size(plan.total_bytes_to_clean))}"
+        )
+        print(
+            f"  {theme.muted('Skipped active profiles:')}    {len(plan.skipped_active)}"
+        )
+        print(
+            f"  {theme.muted('Skipped unknown profiles:')}   {len(plan.skipped_unknown)}"
+        )
         result = execute_cleanup_plan(plan, dry_run=True)
         print(
-            f"\nDry run complete: would delete {format_size(result.deleted_bytes)} across {result.cleaned_profiles_count} profiles."
+            f"\n  {theme.safe('✓')} Dry run complete — would delete "
+            f"{theme.safe(format_size(result.deleted_bytes))} across "
+            f"{result.cleaned_profiles_count} profile(s)."
         )
         return
 
     # Direct batch clean flags
     if args.clean_safe or args.clean_low_risk:
+        spinner = Spinner(f"Scanning {chrome_root}")
+        spinner.start()
         aggregate = scanner.scan_all(chrome_root)
+        spinner.stop()
         if args.clean_safe:
             handle_batch_safe_cleanup(
                 aggregate, scanner, auto_confirm=args.yes, interactive=False
             )
             if args.clean_low_risk:
+                spinner2 = Spinner("Rescanning")
+                spinner2.start()
                 aggregate = scanner.scan_all(chrome_root, force=True)
+                spinner2.stop()
         if args.clean_low_risk:
             handle_batch_low_risk_cleanup(
                 aggregate, scanner, auto_confirm=args.yes, interactive=False
@@ -681,7 +729,7 @@ def main(argv: list[str] | None = None) -> None:
     try:
         main_menu(args.root)
     except KeyboardInterrupt:
-        print("\n\nBye.")
+        print(f"\n\n  {theme.muted('Bye.')}")
         sys.exit(0)
 
 

@@ -1,10 +1,12 @@
-"""Formatting and presentation layer with ANSI terminal styling and JSON generation."""
+"""Formatting and presentation layer with rich ANSI terminal styling and JSON generation."""
 
 from __future__ import annotations
 
 import json
 import os
 import sys
+import threading
+import time
 from typing import Any
 
 from power_cleaner.models import (
@@ -16,12 +18,15 @@ from power_cleaner.models import (
 )
 from power_cleaner.rules import SAFETY_DESCRIPTIONS
 
+# ──────────────────────────────────────────────────────────────────────────────
+#  Color Theme
+# ──────────────────────────────────────────────────────────────────────────────
+
 
 class ColorTheme:
     """Terminal ANSI colors with automatic TTY and NO_COLOR detection."""
 
     def __init__(self, force_disable: bool = False) -> None:
-        # Detect whether colors should be enabled
         no_color = "NO_COLOR" in os.environ
         is_tty = hasattr(sys.stdout, "isatty") and sys.stdout.isatty()
         self.enabled = not force_disable and is_tty and not no_color
@@ -30,25 +35,60 @@ class ColorTheme:
             self.RESET = "\033[0m"
             self.BOLD = "\033[1m"
             self.DIM = "\033[2m"
-            self.GREEN = "\033[32m"
-            self.YELLOW = "\033[33m"
-            self.RED = "\033[31m"
-            self.CYAN = "\033[36m"
-            self.BLUE = "\033[34m"
-            self.MAGENTA = "\033[35m"
+            self.ITALIC = "\033[3m"
+
+            # Bright variants — more vivid in modern terminals
+            self.GREEN = "\033[92m"
+            self.YELLOW = "\033[93m"
+            self.RED = "\033[91m"
+            self.CYAN = "\033[96m"
+            self.BLUE = "\033[94m"
+            self.MAGENTA = "\033[95m"
+            self.WHITE = "\033[97m"
+            self.GRAY = "\033[90m"
+            self.ORANGE = "\033[38;5;214m"
+
+            # Backgrounds
+            self.BG_RED = "\033[48;5;88m"
+            self.BG_GREEN = "\033[48;5;22m"
+            self.BG_DARK = "\033[48;5;235m"
         else:
-            self.RESET = ""
-            self.BOLD = ""
-            self.DIM = ""
-            self.GREEN = ""
-            self.YELLOW = ""
-            self.RED = ""
-            self.CYAN = ""
-            self.BLUE = ""
-            self.MAGENTA = ""
+            for attr in (
+                "RESET",
+                "BOLD",
+                "DIM",
+                "ITALIC",
+                "GREEN",
+                "YELLOW",
+                "RED",
+                "CYAN",
+                "BLUE",
+                "MAGENTA",
+                "WHITE",
+                "GRAY",
+                "ORANGE",
+                "BG_RED",
+                "BG_GREEN",
+                "BG_DARK",
+            ):
+                setattr(self, attr, "")
+
+    # ── Semantic helpers ───────────────────────────────────────────────────────
 
     def bold(self, text: str) -> str:
         return f"{self.BOLD}{text}{self.RESET}"
+
+    def dim(self, text: str) -> str:
+        return f"{self.DIM}{text}{self.RESET}"
+
+    def muted(self, text: str) -> str:
+        return f"{self.GRAY}{text}{self.RESET}"
+
+    def accent(self, text: str) -> str:
+        return f"{self.CYAN}{text}{self.RESET}"
+
+    def highlight(self, text: str) -> str:
+        return f"{self.BOLD}{self.WHITE}{text}{self.RESET}"
 
     def safe(self, text: str) -> str:
         return f"{self.GREEN}{text}{self.RESET}"
@@ -63,23 +103,80 @@ class ColorTheme:
         return f"{self.RED}{text}{self.RESET}"
 
     def unknown(self, text: str) -> str:
-        return f"{self.DIM}{text}{self.RESET}"
+        return f"{self.DIM}{self.GRAY}{text}{self.RESET}"
 
     def active(self, text: str) -> str:
-        return f"{self.RED}{self.BOLD}{text}{self.RESET}"
+        return f"{self.BOLD}{self.RED}{text}{self.RESET}"
 
     def inactive(self, text: str) -> str:
         return f"{self.GREEN}{text}{self.RESET}"
 
     def status(self, status: BrowserStatus) -> str:
         if status == BrowserStatus.ACTIVE:
-            return self.active("ACTIVE")
+            return self.active("● ACTIVE")
         if status == BrowserStatus.INACTIVE:
-            return self.inactive("inactive")
-        return self.review("UNKNOWN")
+            return self.inactive("○ inactive")
+        return self.review("◌ unknown")
+
+    def safety_label(self, level: SafetyLevel) -> str:
+        labels = {
+            SafetyLevel.SAFE: self.safe("SAFE"),
+            SafetyLevel.LOW_RISK: self.low_risk("LOW-RISK"),
+            SafetyLevel.REVIEW: self.review("REVIEW"),
+            SafetyLevel.PROTECTED: self.protected("PROTECTED"),
+        }
+        return labels.get(level, self.unknown("UNKNOWN"))
 
 
 theme = ColorTheme()
+
+
+# ──────────────────────────────────────────────────────────────────────────────
+#  Spinner (non-blocking, daemon thread)
+# ──────────────────────────────────────────────────────────────────────────────
+
+
+class Spinner:
+    """Minimal inline spinner for scan feedback."""
+
+    FRAMES = ["⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"]
+
+    def __init__(self, message: str = "Scanning") -> None:
+        self.message = message
+        self._stop_event = threading.Event()
+        self._thread: threading.Thread | None = None
+
+    def _spin(self) -> None:
+        i = 0
+        while not self._stop_event.is_set():
+            frame = self.FRAMES[i % len(self.FRAMES)]
+            colored = f"{theme.CYAN}{frame}{theme.RESET}" if theme.enabled else frame
+            sys.stdout.write(f"\r  {colored}  {self.message}…")
+            sys.stdout.flush()
+            time.sleep(0.08)
+            i += 1
+
+    def start(self) -> None:
+        if theme.enabled:
+            self._stop_event.clear()
+            self._thread = threading.Thread(target=self._spin, daemon=True)
+            self._thread.start()
+        else:
+            print(f"  {self.message}…")
+
+    def stop(self, done_message: str = "") -> None:
+        if self._thread:
+            self._stop_event.set()
+            self._thread.join()
+            sys.stdout.write("\r" + " " * (len(self.message) + 12) + "\r")
+            sys.stdout.flush()
+        if done_message:
+            print(done_message)
+
+
+# ──────────────────────────────────────────────────────────────────────────────
+#  Size & Visual Utilities
+# ──────────────────────────────────────────────────────────────────────────────
 
 
 def format_size(size: int) -> str:
@@ -102,48 +199,176 @@ def human_percent(part: int, total: int) -> str:
     return f"{part / total * 100:.1f}%"
 
 
+def render_mini_bar(part: int, total: int, width: int = 10, color_fn=None) -> str:
+    """Render a compact horizontal proportion bar."""
+    if total == 0:
+        filled = 0
+    else:
+        filled = round(part / total * width)
+    filled = max(0, min(filled, width))
+    bar = "█" * filled + "░" * (width - filled)
+    return color_fn(bar) if color_fn and theme.enabled else bar
+
+
+def render_storage_bar(aggregate: AggregateReport, width: int = 30) -> str:
+    """Render a stacked segmented storage bar."""
+    total = aggregate.total_size
+    if total == 0:
+        return theme.muted("░" * width) if theme.enabled else "░" * width
+
+    safe_w = round(aggregate.safe_size / total * width)
+    low_w = round(aggregate.low_risk_size / total * width)
+    rev_w = round(aggregate.review_size / total * width)
+    prot_w = round(aggregate.protected_size / total * width)
+    unk_w = max(0, width - safe_w - low_w - rev_w - prot_w)
+
+    return (
+        theme.safe("█" * safe_w)
+        + theme.low_risk("█" * low_w)
+        + theme.review("█" * rev_w)
+        + theme.protected("█" * prot_w)
+        + theme.unknown("░" * unk_w)
+    )
+
+
+def _rule(width: int = 60, char: str = "─", color_fn=None) -> str:
+    line = char * width
+    return color_fn(line) if color_fn and theme.enabled else line
+
+
+def render_breadcrumb(*parts: str) -> str:
+    """Render a navigation trail: Home › Browsers › Profile"""
+    sep = f"  {theme.muted('›')}  " if theme.enabled else "  ›  "
+    colored = []
+    for i, p in enumerate(parts):
+        if i == len(parts) - 1:
+            colored.append(theme.highlight(p) if theme.enabled else p)
+        else:
+            colored.append(theme.muted(p) if theme.enabled else p)
+    return "  " + sep.join(colored)
+
+
+# ──────────────────────────────────────────────────────────────────────────────
+#  Banner
+# ──────────────────────────────────────────────────────────────────────────────
+
+
+def render_banner(version: str = "") -> str:
+    """Render the styled app banner."""
+    ver_str = f"v{version}" if version else ""
+    if theme.enabled:
+        top = f"{theme.BOLD}{theme.CYAN}  ╔{'═' * 51}╗{theme.RESET}"
+        mid1 = (
+            f"{theme.BOLD}{theme.CYAN}  ║{theme.RESET}"
+            f"  {theme.BOLD}{theme.CYAN}⚡{theme.RESET}"
+            f"  {theme.BOLD}{theme.WHITE}ChromePower Cleaner{theme.RESET}"
+            + " " * 27
+            + f"{theme.BOLD}{theme.CYAN}║{theme.RESET}"
+        )
+        sub = f"     Storage Analyzer & Cache Cleanup  {ver_str}"
+        pad = 53 - len(sub)
+        mid2 = (
+            f"{theme.BOLD}{theme.CYAN}  ║{theme.RESET}"
+            f"{theme.GRAY}{sub}{' ' * pad}{theme.RESET}"
+            f"{theme.BOLD}{theme.CYAN}║{theme.RESET}"
+        )
+        bot = f"{theme.BOLD}{theme.CYAN}  ╚{'═' * 51}╝{theme.RESET}"
+        return "\n".join(["", top, mid1, mid2, bot])
+    else:
+        return (
+            "\n"
+            "  ╔═══════════════════════════════════════════════════╗\n"
+            "  ║   ⚡  ChromePower Cleaner                        ║\n"
+            f"  ║      Storage Analyzer & Cache Cleanup  {ver_str:<9}║\n"
+            "  ╚═══════════════════════════════════════════════════╝"
+        )
+
+
+# ──────────────────────────────────────────────────────────────────────────────
+#  Overview
+# ──────────────────────────────────────────────────────────────────────────────
+
+
 def render_overview(aggregate: AggregateReport) -> str:
-    """Render the high-level ChromePower overview."""
-    lines = [
-        "",
-        theme.bold("ChromePower Cleaner"),
-        "═" * 55,
-        f"Root:              {aggregate.root}",
-        "",
-        f"Browsers:          {theme.bold(str(aggregate.browser_count))}",
-        f"Total storage:     {theme.bold(format_size(aggregate.total_size))}",
-        "",
-        theme.bold("Potential cleanup:"),
-        f"  Safe:            {theme.safe(format_size(aggregate.safe_size))}",
-        f"  Low-risk:        {theme.low_risk(format_size(aggregate.low_risk_size))}",
-        f"  Review:          {theme.review(format_size(aggregate.review_size))}",
-        "",
-        f"Protected:         {theme.protected(format_size(aggregate.protected_size))}",
-        f"Unknown:           {theme.unknown(format_size(aggregate.unknown_size))}",
-        f"Inaccessible:      {format_size(aggregate.inaccessible_size)}",
-        "",
-    ]
+    """Render the high-level ChromePower overview with visual bars."""
+    W = 60
+
+    def kv(label: str, val: str) -> str:
+        return f"  {theme.muted(label):<22}{val}"
+
+    bar = render_storage_bar(aggregate, width=30)
+    legend = (
+        f"  {theme.safe('█')} Safe  "
+        f"{theme.low_risk('█')} Low-risk  "
+        f"{theme.review('█')} Review  "
+        f"{theme.protected('█')} Prot  "
+        f"{theme.unknown('░')} Unknown"
+    )
+
+    lines = ["", f"  {bar}", legend, ""]
+    lines.append(_rule(W, "═", theme.accent if theme.enabled else None))
+    lines.append(
+        kv(
+            "Root:",
+            theme.dim(str(aggregate.root)) if theme.enabled else str(aggregate.root),
+        )
+    )
+    lines.append("")
+    lines.append(kv("Browsers:", theme.bold(str(aggregate.browser_count))))
+    lines.append(kv("Total storage:", theme.bold(format_size(aggregate.total_size))))
+    lines.append("")
+    lines.append(f"  {theme.bold('Potential cleanup:')}")
+    lines.append(
+        f"    {theme.muted('Safe'):<16}{theme.safe(format_size(aggregate.safe_size)):>12}"
+        f"   {render_mini_bar(aggregate.safe_size, aggregate.total_size, color_fn=theme.safe)}"
+    )
+    lines.append(
+        f"    {theme.muted('Low-risk'):<16}{theme.low_risk(format_size(aggregate.low_risk_size)):>12}"
+        f"   {render_mini_bar(aggregate.low_risk_size, aggregate.total_size, color_fn=theme.low_risk)}"
+    )
+    lines.append(
+        f"    {theme.muted('Review'):<16}{theme.review(format_size(aggregate.review_size)):>12}"
+        f"   {render_mini_bar(aggregate.review_size, aggregate.total_size, color_fn=theme.review)}"
+    )
+    lines.append("")
+    lines.append(
+        kv("Protected:", theme.protected(format_size(aggregate.protected_size)))
+    )
+    lines.append(kv("Unknown:", theme.unknown(format_size(aggregate.unknown_size))))
+    lines.append(kv("Inaccessible:", format_size(aggregate.inaccessible_size)))
 
     if aggregate.total_size > 0:
-        safe_pct = human_percent(aggregate.safe_size, aggregate.total_size)
-        lines.append(f"Safe cleanup:      {theme.safe(safe_pct)}")
+        pct = human_percent(aggregate.safe_size, aggregate.total_size)
         lines.append("")
+        lines.append(
+            f"  {theme.muted('Safe reclaimable:')}  {theme.safe(pct + ' of total')}"
+        )
+
+    lines.append("")
+    lines.append(_rule(W, "─", theme.muted if theme.enabled else None))
+
+    # Activity status row
+    lines.append(
+        f"  {theme.active('● ' + str(aggregate.active_count) + ' active')}"
+        f"   {theme.inactive('○ ' + str(aggregate.inactive_count) + ' inactive')}"
+        f"   {theme.muted('◌ ' + str(aggregate.unknown_status_count) + ' unknown')}"
+    )
 
     if aggregate.largest_browser:
-        lines.append("Largest browser:")
-        lines.append(
-            f"    {aggregate.largest_browser.name} — {format_size(aggregate.largest_browser.total_size)}"
-        )
         lines.append("")
+        lines.append(
+            f"  {theme.muted('Largest browser:')}  "
+            f"{theme.highlight(aggregate.largest_browser.name)}"
+            f"  {theme.dim(format_size(aggregate.largest_browser.total_size))}"
+        )
 
     if aggregate.largest_cleanup and aggregate.largest_cleanup.safe_size > 0:
-        lines.append("Largest cleanup opportunity:")
         lines.append(
-            f"    {aggregate.largest_cleanup.name} — {theme.safe(format_size(aggregate.largest_cleanup.safe_size))}"
+            f"  {theme.muted('Top cleanup opp:')}  "
+            f"{theme.highlight(aggregate.largest_cleanup.name)}"
+            f"  {theme.safe(format_size(aggregate.largest_cleanup.safe_size) + ' free')}"
         )
-        lines.append("")
 
-    # Find largest unknown item across profiles
     largest_unk_browser = ""
     largest_unk_path = ""
     largest_unk_size = 0
@@ -155,18 +380,19 @@ def render_overview(aggregate: AggregateReport) -> str:
                 largest_unk_path = it.relative_path
 
     if largest_unk_size > 0:
-        lines.append("Largest unknown data:")
         lines.append(
-            f"    {largest_unk_browser} / {largest_unk_path} — {format_size(largest_unk_size)}"
+            f"  {theme.muted('Largest unknown:')}  "
+            f"{theme.unknown(largest_unk_browser + ' / ' + largest_unk_path)}"
+            f"  {theme.dim(format_size(largest_unk_size))}"
         )
-        lines.append("")
 
-    lines.append("Browser activity status:")
-    lines.append(f"  Active:          {theme.active(str(aggregate.active_count))}")
-    lines.append(f"  Inactive:        {theme.inactive(str(aggregate.inactive_count))}")
-    lines.append(f"  Unknown status:  {str(aggregate.unknown_status_count)}")
-
+    lines.append("")
     return "\n".join(lines)
+
+
+# ──────────────────────────────────────────────────────────────────────────────
+#  Browser Table
+# ──────────────────────────────────────────────────────────────────────────────
 
 
 def render_browser_table(
@@ -177,7 +403,7 @@ def render_browser_table(
     sorted_reports = list(reports)
     if sort_by == "size":
         sorted_reports.sort(key=lambda r: r.total_size, reverse=True)
-    elif sort_by == "safe" or sort_by == "cleanup":
+    elif sort_by in ("safe", "cleanup"):
         sorted_reports.sort(key=lambda r: r.safe_size, reverse=True)
     elif sort_by == "review":
         sorted_reports.sort(key=lambda r: r.review_size, reverse=True)
@@ -190,73 +416,141 @@ def render_browser_table(
             key=lambda r: (r.status != BrowserStatus.ACTIVE, r.name.lower())
         )
 
+    W = 84
     lines = [
         "",
-        theme.bold(f"ChromePower Browsers (Sorted by {sort_by})"),
-        f"{'#':>3}  {'Browser':<25} {'Total':>10} {'Safe':>10} {'Review':>10} {'Unknown':>10}  {'Status'}",
-        "─" * 82,
+        render_breadcrumb("Home", "Browsers"),
+        "",
+        _rule(W, "═", theme.accent if theme.enabled else None),
+        (
+            f"  {'#':>2}  "
+            f"{theme.bold('Browser'):<25}  "
+            f"{theme.bold('Total'):>10}  "
+            f"{theme.safe('Safe'):>10}  "
+            f"{theme.review('Review'):>10}  "
+            f"{theme.unknown('Unknown'):>10}  "
+            f"{theme.bold('Status')}"
+        ),
+        _rule(W, "─", theme.muted if theme.enabled else None),
     ]
 
+    total_size = sum(r.total_size for r in reports)
+
     for index, r in enumerate(sorted_reports, 1):
-        status_str = theme.status(r.status)
+        name_str = theme.bold(r.name) if r.status == BrowserStatus.ACTIVE else r.name
         lines.append(
-            f"{index:>3}  "
-            f"{r.name:<25} "
-            f"{format_size(r.total_size):>10} "
-            f"{format_size(r.safe_size):>10} "
-            f"{format_size(r.review_size):>10} "
-            f"{format_size(r.unknown_size):>10}  "
-            f"{status_str}"
+            f"  {theme.muted(str(index)):>2}  "
+            f"{name_str:<25}  "
+            f"{format_size(r.total_size):>10}  "
+            f"{theme.safe(format_size(r.safe_size)):>10}  "
+            f"{theme.review(format_size(r.review_size)):>10}  "
+            f"{theme.unknown(format_size(r.unknown_size)):>10}  "
+            f"{theme.status(r.status)}"
         )
 
+    lines.append(_rule(W, "─", theme.muted if theme.enabled else None))
+    lines.append(
+        f"  {'':>2}  {theme.muted('Total'):<25}  {theme.bold(format_size(total_size)):>10}"
+    )
+    lines.append("")
+    sort_keys = ["size", "cleanup", "review", "unknown", "name"]
+    sort_hint = "  ".join(
+        (theme.accent(f"[{k[0]}]") if theme.enabled else f"[{k[0]}]") + f" {k}"
+        for k in sort_keys
+    )
+    lines.append(f"  {theme.muted('Sort:')}  {sort_hint}")
     return "\n".join(lines)
+
+
+# ──────────────────────────────────────────────────────────────────────────────
+#  Browser Details
+# ──────────────────────────────────────────────────────────────────────────────
 
 
 def render_browser_details(report: BrowserReport) -> str:
     """Render comprehensive inspection breakdown for a single browser."""
+    W = 62
+
     lines = [
         "",
-        theme.bold(f"Browser: {report.name}"),
-        f"Path:    {report.path}",
+        render_breadcrumb("Home", "Browsers", report.name),
+        "",
     ]
 
     if report.status == BrowserStatus.ACTIVE:
-        lines.append(
-            f"Status:  {theme.active('ACTIVE — cleanup disabled')} ({report.status_reason})"
+        badge = (
+            f"  {theme.BG_RED}{theme.BOLD}  ● ACTIVE — cleanup disabled  {theme.RESET}"
+            f"  {theme.dim(report.status_reason)}"
+            if theme.enabled
+            else f"  ● ACTIVE — cleanup disabled  ({report.status_reason})"
         )
     elif report.status == BrowserStatus.INACTIVE:
-        lines.append(f"Status:  {theme.inactive('INACTIVE')}")
+        badge = f"  {theme.inactive('○ INACTIVE')}  {theme.dim('safe to clean')}"
     else:
-        lines.append(
-            f"Status:  {theme.review('UNKNOWN — cleanup disabled')} ({report.status_reason})"
+        badge = (
+            f"  {theme.review('◌ UNKNOWN — cleanup disabled')}"
+            f"  {theme.dim(report.status_reason)}"
         )
 
-    lines.extend(
-        [
-            "",
-            f"Total:         {format_size(report.total_size)}",
-            f"Safe:          {theme.safe(format_size(report.safe_size))}",
-            f"Low risk:      {theme.low_risk(format_size(report.low_risk_size))}",
-            f"Review:        {theme.review(format_size(report.review_size))}",
-            f"Protected:     {theme.protected(format_size(report.protected_size))}",
-            f"Unknown:       {theme.unknown(format_size(report.unknown_size))}",
-            f"Inaccessible:  {format_size(report.inaccessible_size)} ({report.inaccessible_count} errors)",
-            "",
-            theme.bold("STORAGE BREAKDOWN"),
-            "═" * 45,
-        ]
+    lines.append(badge)
+    lines.append(theme.dim(f"  {report.path}") if theme.enabled else f"  {report.path}")
+    lines.append("")
+    lines.append(_rule(W, "═", theme.accent if theme.enabled else None))
+
+    def storage_row(label: str, val: int, total: int, color_fn) -> str:
+        bar = render_mini_bar(val, total, width=10, color_fn=color_fn)
+        pct = human_percent(val, total)
+        return (
+            f"  {theme.muted(label):<18}"
+            f"{color_fn(format_size(val)):>12}"
+            f"  {bar}  {theme.muted(pct)}"
+        )
+
+    t = report.total_size
+    lines.append(f"  {theme.muted('Total'):<18}{theme.bold(format_size(t)):>12}")
+    lines.append(storage_row("Safe", report.safe_size, t, theme.safe))
+    lines.append(storage_row("Low risk", report.low_risk_size, t, theme.low_risk))
+    lines.append(storage_row("Review", report.review_size, t, theme.review))
+    lines.append(storage_row("Protected", report.protected_size, t, theme.protected))
+    lines.append(storage_row("Unknown", report.unknown_size, t, theme.unknown))
+    lines.append(
+        f"  {theme.muted('Inaccessible'):<18}{format_size(report.inaccessible_size):>12}"
+        f"  {theme.muted(f'({report.inaccessible_count} errors)')}"
     )
 
+    lines.append("")
+    lines.append(_rule(W, "─", theme.muted if theme.enabled else None))
+
+    if report.status == BrowserStatus.ACTIVE:
+        lines.append(
+            f"  {theme.active('⊘')}  Cleanup {theme.active('BLOCKED')} — Chrome is active"
+        )
+    elif report.status == BrowserStatus.UNKNOWN:
+        lines.append(
+            f"  {theme.review('⊘')}  Cleanup {theme.review('BLOCKED')} — activity status unknown"
+        )
+    elif report.safe_size == 0:
+        lines.append(f"  {theme.muted('○')}  Nothing safe to clean")
+    else:
+        lines.append(
+            f"  {theme.safe('✓')}  {theme.safe('READY TO CLEAN')}"
+            f"  — {theme.safe(format_size(report.safe_size))} reclaimable"
+        )
+
+    lines.append("")
+    lines.append(f"  {theme.bold('STORAGE BREAKDOWN')}")
+    lines.append(_rule(W, "═", theme.accent if theme.enabled else None))
+
     def render_section(title: str, items: list[StorageItem], color_fn) -> None:
-        lines.append(f"\n{color_fn(title)}")
-        lines.append("─" * len(title))
+        lines.append(f"\n  {color_fn(title)}")
+        lines.append(f"  {theme.muted('─' * (len(title) + 1))}")
         if not items:
-            lines.append("  (None)")
+            lines.append(f"  {theme.muted('(none)')}")
             return
-        for it in items:
-            lines.append(f"  {format_size(it.size):>10}  {it.relative_path}")
+        for it in sorted(items, key=lambda x: x.size, reverse=True):
+            lines.append(f"  {color_fn(format_size(it.size)):>14}  {it.relative_path}")
             if it.description:
-                lines.append(f"              {theme.DIM}{it.description}{theme.RESET}")
+                lines.append(f"  {'':>14}  {theme.dim(it.description)}")
 
     render_section("SAFE TO CLEAN", report.safe_items, theme.safe)
     render_section("LOW RISK", report.low_risk_items, theme.low_risk)
@@ -267,67 +561,73 @@ def render_browser_details(report: BrowserReport) -> str:
     if report.inaccessible_items:
         render_section("INACCESSIBLE", report.inaccessible_items, theme.review)
 
-    lines.extend(
-        [
-            "",
-            theme.bold("CLEANUP SUMMARY"),
-            "─" * 25,
-            f"Potentially reclaimable: {theme.safe(format_size(report.safe_size))}",
-        ]
-    )
-
-    if report.status == BrowserStatus.ACTIVE:
-        lines.append(
-            f"Cleanup:                 {theme.active('BLOCKED — Chrome is active')}"
-        )
-    elif report.status == BrowserStatus.UNKNOWN:
-        lines.append(
-            f"Cleanup:                 {theme.review('BLOCKED — activity status unknown')}"
-        )
-    elif report.safe_size == 0:
-        lines.append("Cleanup:                 Nothing safe to clean")
-    else:
-        lines.append(f"Cleanup:                 {theme.safe('READY TO CLEAN')}")
-
+    lines.append("")
     return "\n".join(lines)
 
 
+# ──────────────────────────────────────────────────────────────────────────────
+#  Why Explanation
+# ──────────────────────────────────────────────────────────────────────────────
+
+
 def render_why_explanation(item: StorageItem) -> str:
-    """Render detailed explanation of why an item is classified and what action is advised."""
+    """Render detailed explanation of why an item is classified."""
+    W = 62
     lines = [
         "",
-        theme.bold(f"Path: {item.relative_path}"),
-        f"Size: {format_size(item.size)} ({item.file_count} files)",
-        f"Category: {item.category}",
-        f"Classification: {item.safety.value} (Confidence: {item.confidence.value})",
+        render_breadcrumb("Home", "Explain"),
         "",
-        theme.bold("Why:"),
-        f"  {item.rationale or item.description}",
+        _rule(W, "═", theme.accent if theme.enabled else None),
+        f"  {theme.bold(item.relative_path)}",
+        (
+            f"  {theme.muted('Size:')} {format_size(item.size)}"
+            f"   {theme.muted('Files:')} {item.file_count}"
+            f"   {theme.muted('Category:')} {item.category}"
+        ),
+        f"  {theme.muted('Classification:')} {theme.safety_label(item.safety)}"
+        f"   {theme.muted('Confidence:')} {item.confidence.value}",
         "",
-        theme.bold("Category Overview:"),
-        f"  {SAFETY_DESCRIPTIONS.get(item.safety, 'No category description available.')}",
+        _rule(W, "─", theme.muted if theme.enabled else None),
+        f"  {theme.bold('Why this is classified this way:')}",
+        f"  {theme.dim(item.rationale or item.description)}",
         "",
-        theme.bold("Suggested action:"),
+        f"  {theme.bold('Category Overview:')}",
+        f"  {theme.dim(SAFETY_DESCRIPTIONS.get(item.safety, 'No category description available.'))}",
+        "",
+        f"  {theme.bold('Suggested Action:')}",
     ]
 
     if item.safety == SafetyLevel.SAFE:
-        lines.append("  Safe to clean. Chrome will regenerate cache data as needed.")
+        lines.append(
+            f"  {theme.safe('✓')}  Safe to clean. Chrome regenerates cache data as needed."
+        )
     elif item.safety == SafetyLevel.LOW_RISK:
         lines.append(
-            "  Can be cleaned if space is critical; Chrome will redownload component files."
+            f"  {theme.low_risk('~')}  Can be cleaned if space is critical;"
+            " Chrome will redownload component files."
         )
     elif item.safety == SafetyLevel.REVIEW:
         lines.append(
+            f"  {theme.review('!')}"
             "  Review before deleting. May affect offline web apps or saved site state."
         )
     elif item.safety == SafetyLevel.PROTECTED:
         lines.append(
-            "  PROTECTED. Do not delete. Contains essential personal user or browser state."
+            f"  {theme.protected('⊘')}  PROTECTED. Do not delete."
+            " Contains essential personal user or browser state."
         )
     else:
-        lines.append("  Unclassified data. Investigate contents before removing.")
+        lines.append(
+            f"  {theme.unknown('?')}  Unclassified data. Investigate contents before removing."
+        )
 
+    lines.append("")
     return "\n".join(lines)
+
+
+# ──────────────────────────────────────────────────────────────────────────────
+#  Cleanup Opportunities
+# ──────────────────────────────────────────────────────────────────────────────
 
 
 def render_largest_cleanup_opportunities(
@@ -337,43 +637,73 @@ def render_largest_cleanup_opportunities(
     sorted_reports = [r for r in reports if r.safe_size > 0]
     sorted_reports.sort(key=lambda r: r.safe_size, reverse=True)
 
+    W = 80
     lines = [
         "",
-        theme.bold("Largest Cleanup Opportunities"),
-        f"{'#':>2} {'Browser':<25} {'Total':>10} {'Safe':>10} {'% Reclaimable':>14}  {'Status'}",
-        "─" * 72,
+        render_breadcrumb("Home", "Cleanup Opportunities"),
+        "",
+        _rule(W, "═", theme.accent if theme.enabled else None),
+        (
+            f"  {'#':>2}  "
+            f"{theme.bold('Browser'):<25}  "
+            f"{theme.bold('Total'):>10}  "
+            f"{theme.safe('Safe'):>10}  "
+            f"{'%':>5}  "
+            f"{'Bar':<10}  "
+            f"{theme.bold('Status')}"
+        ),
+        _rule(W, "─", theme.muted if theme.enabled else None),
     ]
 
     top_reports = sorted_reports[:top_n]
+    total_safe = sum(r.safe_size for r in top_reports)
+
     for index, r in enumerate(top_reports, 1):
         pct = human_percent(r.safe_size, r.total_size)
+        bar = render_mini_bar(r.safe_size, r.total_size, width=10, color_fn=theme.safe)
         lines.append(
-            f"{index:>2} "
-            f"{r.name:<25} "
-            f"{format_size(r.total_size):>10} "
-            f"{theme.safe(format_size(r.safe_size)):>10} "
-            f"{pct:>14}  "
+            f"  {theme.muted(str(index)):>2}  "
+            f"{r.name:<25}  "
+            f"{format_size(r.total_size):>10}  "
+            f"{theme.safe(format_size(r.safe_size)):>10}  "
+            f"{pct:>5}  "
+            f"{bar}  "
             f"{theme.status(r.status)}"
         )
 
-    # Show directories responsible for top 5
+    lines.append(_rule(W, "─", theme.muted if theme.enabled else None))
+    lines.append(
+        f"  {'':>2}  {theme.muted('Total reclaimable'):<25}               "
+        f"{theme.safe(format_size(total_safe)):>10}"
+    )
+
     if top_reports:
         lines.extend(
             [
                 "",
-                theme.bold("Responsible Cache Directories (Top Browsers):"),
-                "─" * 50,
+                f"  {theme.bold('Top Cache Directories:')}",
+                _rule(W, "─", theme.muted if theme.enabled else None),
             ]
         )
         for r in top_reports[:5]:
-            lines.append(f"\n{theme.bold(r.name)} (Safe: {format_size(r.safe_size)}):")
-            for it in r.safe_items[:4]:
+            lines.append(
+                f"\n  {theme.accent('▸')} {theme.bold(r.name)}"
+                f"  {theme.dim(format_size(r.safe_size) + ' safe')}"
+            )
+            for it in sorted(r.safe_items, key=lambda x: x.size, reverse=True)[:4]:
                 if it.size > 0:
                     lines.append(
-                        f"    {it.relative_path:<32} {format_size(it.size):>10}"
+                        f"    {theme.safe(format_size(it.size)):>12}  "
+                        f"{theme.dim(it.relative_path)}"
                     )
 
+    lines.append("")
     return "\n".join(lines)
+
+
+# ──────────────────────────────────────────────────────────────────────────────
+#  Unknown & Review Data
+# ──────────────────────────────────────────────────────────────────────────────
 
 
 def render_largest_unknown_data(reports: list[BrowserReport], top_n: int = 20) -> str:
@@ -388,22 +718,39 @@ def render_largest_unknown_data(reports: list[BrowserReport], top_n: int = 20) -
 
     unknown_entries.sort(key=lambda x: x[2], reverse=True)
 
+    W = 84
     lines = [
         "",
-        theme.bold("Largest Unknown Data (Opportunities for Rule Additions)"),
-        f"{'#':>2} {'Browser':<20} {'Relative Path':<35} {'Size':>10} {'Files':>8}",
-        "─" * 80,
+        render_breadcrumb("Home", "Unknown Data"),
+        "",
+        _rule(W, "═", theme.accent if theme.enabled else None),
+        (
+            f"  {'#':>2}  "
+            f"{theme.muted('Browser'):<20}  "
+            f"{theme.muted('Relative Path'):<35}  "
+            f"{theme.muted('Size'):>10}  "
+            f"{theme.muted('Files'):>6}"
+        ),
+        _rule(W, "─", theme.muted if theme.enabled else None),
     ]
 
     if not unknown_entries:
-        lines.append("  (No unknown data found across any profiles!)")
-        return "\n".join(lines)
-
-    for index, (b_name, rel_path, size, count) in enumerate(unknown_entries[:top_n], 1):
         lines.append(
-            f"{index:>2} {b_name:<20} {rel_path:<35} {format_size(size):>10} {count:>8}"
+            f"  {theme.safe('✓')}  No unknown data found — all paths are classified!"
         )
+    else:
+        for index, (b_name, rel_path, size, count) in enumerate(
+            unknown_entries[:top_n], 1
+        ):
+            lines.append(
+                f"  {theme.muted(str(index)):>2}  "
+                f"{b_name:<20}  "
+                f"{theme.unknown(rel_path):<35}  "
+                f"{format_size(size):>10}  "
+                f"{count:>6}"
+            )
 
+    lines.append("")
     return "\n".join(lines)
 
 
@@ -417,30 +764,44 @@ def render_largest_review_data(reports: list[BrowserReport], top_n: int = 20) ->
 
     review_entries.sort(key=lambda x: x[2], reverse=True)
 
+    W = 90
     lines = [
         "",
-        theme.bold("Largest Review Data (Persistent Web / App Storage)"),
-        f"{'#':>2} {'Browser':<18} {'Path':<28} {'Size':>10}  {'Explanation'}",
-        "─" * 85,
+        render_breadcrumb("Home", "Review Data"),
+        "",
+        _rule(W, "═", theme.accent if theme.enabled else None),
+        (
+            f"  {'#':>2}  "
+            f"{theme.muted('Browser'):<18}  "
+            f"{theme.muted('Path'):<28}  "
+            f"{theme.muted('Size'):>10}  "
+            f"{theme.muted('Explanation')}"
+        ),
+        _rule(W, "─", theme.muted if theme.enabled else None),
     ]
 
     if not review_entries:
-        lines.append("  (No review data found!)")
-        return "\n".join(lines)
+        lines.append(f"  {theme.safe('✓')}  No review data found!")
+    else:
+        for index, (b_name, rel_path, size, rationale) in enumerate(
+            review_entries[:top_n], 1
+        ):
+            short_rat = rationale[:42] + "…" if len(rationale) > 42 else rationale
+            lines.append(
+                f"  {theme.muted(str(index)):>2}  "
+                f"{b_name:<18}  "
+                f"{theme.review(rel_path):<28}  "
+                f"{format_size(size):>10}  "
+                f"{theme.dim(short_rat)}"
+            )
 
-    for index, (b_name, rel_path, size, rationale) in enumerate(
-        review_entries[:top_n], 1
-    ):
-        short_rat = rationale[:40] + "..." if len(rationale) > 40 else rationale
-        lines.append(
-            f"{index:>2} "
-            f"{b_name:<18} "
-            f"{rel_path:<28} "
-            f"{format_size(size):>10}  "
-            f"{short_rat}"
-        )
-
+    lines.append("")
     return "\n".join(lines)
+
+
+# ──────────────────────────────────────────────────────────────────────────────
+#  JSON Output
+# ──────────────────────────────────────────────────────────────────────────────
 
 
 def to_json_dict(aggregate: AggregateReport) -> dict[str, Any]:

@@ -6,45 +6,54 @@
 # ─────────────────────────────────────────────
 # IRIS_DESC: Safe ChromePower storage analyzer and cache cleanup
 
-if command -v tput &> /dev/null; then
-    bold=$(tput bold)
-    reset=$(tput sgr0)
+# ── Terminal color detection ──────────────────────────────────────────────────
+if [[ -t 1 ]] && command -v tput &> /dev/null && [[ -z "${NO_COLOR:-}" ]]; then
+    BOLD=$(tput bold 2> /dev/null || true)
+    RESET=$(tput sgr0 2> /dev/null || true)
+    CYAN=$(tput setaf 6 2> /dev/null || true)
+    GREEN=$(tput setaf 2 2> /dev/null || true)
+    RED=$(tput setaf 1 2> /dev/null || true)
+    DIM=$(tput dim 2> /dev/null || true)
 else
-    bold=""
-    reset=""
+    BOLD="" RESET="" CYAN="" GREEN="" RED="" DIM=""
 fi
 
 show_help() {
     cat << EOF
 
-${bold}USAGE${reset}
-    iris power-clean [OPTIONS]
-    power-clean [OPTIONS]
+${BOLD}${CYAN}  ╭──────────────────────────────────────────╮${RESET}
+${BOLD}${CYAN}  │${RESET}  ${BOLD}⚡  ChromePower Cleaner${RESET}${BOLD}${CYAN}                  │${RESET}
+${BOLD}${CYAN}  │${RESET}${DIM}     power-clean — help & usage${RESET}${BOLD}${CYAN}            │${RESET}
+${BOLD}${CYAN}  ╰──────────────────────────────────────────╯${RESET}
 
-${bold}DESCRIPTION${reset}
-    Safe ChromePower storage analysis and cache cleanup tool.
+${BOLD}USAGE${RESET}
+    iris power-clean ${DIM}[OPTIONS]${RESET}
+    power-clean      ${DIM}[OPTIONS]${RESET}
+
+${BOLD}DESCRIPTION${RESET}
+    ${DIM}Safe ChromePower storage analysis and cache cleanup tool.
     Accounts for all storage, protects active Chrome instances,
-    and safely cleans regenerable caches without removing user data.
+    and safely cleans regenerable caches without removing user data.${RESET}
 
-    Default root: ~/Documents/ChromePowerCache/chrome
-    Override with: export CHROME_POWER_ROOT=/path/to/chrome
+    ${CYAN}Default root:${RESET}  ~/Documents/ChromePowerCache/chrome
+    ${CYAN}Override with:${RESET} export CHROME_POWER_ROOT=/path/to/chrome
 
-${bold}OPTIONS${reset}
-    -h, --help              Show this help message
-    --root <path>           ChromePower cache root path
-    --dry-run               Show cleanup actions without deleting anything
-    --clean-safe            Batch clean safe (regenerable) caches across all inactive profiles
-    --clean-low-risk        Batch clean low-risk caches across all inactive profiles
-    -y, --yes, --no-confirm Bypass interactive confirmation prompts
-    --json                  Output full analysis as JSON to stdout and exit
-    --version               Show version number
+${BOLD}OPTIONS${RESET}
+    ${CYAN}-h, --help${RESET}              Show this help message
+    ${CYAN}--root${RESET} ${DIM}<path>${RESET}           ChromePower cache root path
+    ${CYAN}--dry-run${RESET}               Show cleanup actions without deleting anything
+    ${CYAN}--clean-safe${RESET}            Batch clean ${GREEN}safe${RESET} (regenerable) caches
+    ${CYAN}--clean-low-risk${RESET}        Batch clean ${CYAN}low-risk${RESET} caches
+    ${CYAN}-y, --yes, --no-confirm${RESET} Bypass interactive confirmation prompts
+    ${CYAN}--json${RESET}                  Output full analysis as JSON to stdout and exit
+    ${CYAN}--version${RESET}               Show version number
 
-${bold}EXAMPLES${reset}
-    iris power-clean
-    iris power-clean --dry-run
-    iris power-clean --clean-safe -y
-    iris power-clean --clean-low-risk
-    iris power-clean --root ~/Documents/ChromePowerCache/chrome
+${BOLD}EXAMPLES${RESET}
+    ${DIM}iris power-clean${RESET}
+    ${DIM}iris power-clean --dry-run${RESET}
+    ${DIM}iris power-clean --clean-safe -y${RESET}
+    ${DIM}iris power-clean --clean-low-risk${RESET}
+    ${DIM}iris power-clean --root ~/Documents/ChromePowerCache/chrome${RESET}
 
 EOF
 }
@@ -55,7 +64,9 @@ if [[ "$1" == "-h" || "$1" == "--help" ]]; then
 fi
 
 if ! command -v python3 &> /dev/null; then
-    echo "❌  python3 is required but not found in PATH."
+    echo "" >&2
+    echo "  ${RED}⊘${RESET}  ${BOLD}python3 is required but not found in PATH.${RESET}" >&2
+    echo "" >&2
     exit 1
 fi
 
@@ -90,11 +101,14 @@ find_package_dir() {
 PACKAGE_DIR="$(find_package_dir)"
 
 if [[ -z "$PACKAGE_DIR" ]]; then
-    echo "❌  power_cleaner Python package not found."
-    echo ""
-    echo "Expected it in: $IRIS_LIB_DIR/power_cleaner/"
-    echo ""
-    echo "Re-run the installer: bash <(curl -sL https://github.com/rhythwitty/bashiris/raw/main/install.sh)"
+    echo "" >&2
+    echo "  ${RED}⊘  power_cleaner package not found.${RESET}" >&2
+    echo "" >&2
+    echo "  ${DIM}Expected:${RESET}  $IRIS_LIB_DIR/power_cleaner/" >&2
+    echo "" >&2
+    echo "  ${CYAN}Re-run the installer:${RESET}" >&2
+    echo "  ${DIM}bash <(curl -sL https://github.com/rhythwitty/bashiris/raw/main/install.sh)${RESET}" >&2
+    echo "" >&2
     exit 1
 fi
 
