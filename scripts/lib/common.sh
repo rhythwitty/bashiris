@@ -60,7 +60,7 @@ else
 fi
 
 # Export palette so sourcing scripts can use these variables without
-# shellcheck SC2034 "unused variable" warnings in common.sh itself.
+# SC2034 "unused variable" warnings in common.sh itself.
 # shellcheck disable=SC2034
 export BOLD DIM RESET CYAN GREEN YELLOW RED GRAY BLUE MAGENTA
 # shellcheck disable=SC2034

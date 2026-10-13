@@ -1,0 +1,2 @@
+# Disable SC2059: format strings intentionally contain tput styling variables
+disable=SC2059
