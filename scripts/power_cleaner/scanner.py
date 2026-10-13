@@ -6,8 +6,6 @@ import logging
 import os
 from pathlib import Path
 
-logger = logging.getLogger(__name__)
-
 from power_cleaner.config import get_chrome_root
 from power_cleaner.discovery import discover_browsers
 from power_cleaner.models import (
@@ -20,6 +18,8 @@ from power_cleaner.models import (
 )
 from power_cleaner.process import get_system_processes, inspect_browser_activity
 from power_cleaner.rules import RuleRegistry
+
+logger = logging.getLogger(__name__)
 
 
 class ProfileScanner:
