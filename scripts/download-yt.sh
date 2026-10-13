@@ -6,61 +6,71 @@
 # ─────────────────────────────────────────────
 # IRIS_DESC: Download YouTube videos via yt-dlp
 
-SCRIPT_NAME="download-yt"
+IRIS_SCRIPT_NAME="download-yt"
 
-# ── Defaults ──────────────────────────────────
-DEFAULT_BROWSER="chrome"
-DEFAULT_MAX_RES="1080"
-
-# ── Help ──────────────────────────────────────
-show_help() {
-    cat << EOF
-
-$(tput bold)USAGE$(tput sgr0)
-    $SCRIPT_NAME [OPTIONS] <URL>
-    $SCRIPT_NAME --update-deps
-
-$(tput bold)DESCRIPTION$(tput sgr0)
-    Downloads YouTube videos via yt-dlp using browser cookies for authenticated downloads.
-    The browser must be installed and have visited the URL's site so yt-dlp can read
-    its session cookies for age-gated / members-only videos.
-    Output is always saved as MP4 (H.264 + AAC).
-    Use --update-deps to refresh yt-dlp when YouTube changes its player and format logic.
-
-$(tput bold)OPTIONS$(tput sgr0)
-    -b, --browser <browser>     Browser to pull cookies from for authenticated downloads
-                                Supported: chrome, firefox, safari, edge, brave, opera
-                                Default: $DEFAULT_BROWSER
-
-    -r, --resolution <res>      Maximum video resolution to download
-                                Choices: 480, 720, 1080
-                                Default: ${DEFAULT_MAX_RES}p
-
-    -p, --playlist              Allow downloading entire playlists if URL points to one
-    -h, --help                  Show this help message
-
-    --update-deps               Update yt-dlp to the latest version (fixes format errors)
-
-$(tput bold)EXAMPLES$(tput sgr0)
-    $SCRIPT_NAME 'https://youtube.com/watch?v=...'
-    $SCRIPT_NAME -b firefox 'https://youtube.com/watch?v=...'
-    $SCRIPT_NAME -r 720 'https://youtube.com/watch?v=...'
-    $SCRIPT_NAME -p 'https://youtube.com/playlist?list=...'
-    $SCRIPT_NAME -b safari -r 480 'https://youtube.com/watch?v=...'
-
-$(tput bold)TROUBLESHOOTING$(tput sgr0)
-    "Requested format is not available" / "n challenge solving failed"
-    → Run: $SCRIPT_NAME --update-deps
-
-    "zsh: no matches found" / URL gets split at & or ?
-    → Always quote URLs: $SCRIPT_NAME 'https://youtube.com/watch?v=...&t=7s'
-
-EOF
+# ── Load shared library ───────────────────────────────────────────────────────
+_COMMON="$(dirname "${BASH_SOURCE[0]}")/lib/common.sh"
+[[ -f "$_COMMON" ]] || _COMMON="${IRIS_LIB_DIR:-/usr/local/lib/iris}/lib/common.sh"
+# shellcheck source=scripts/lib/common.sh
+source "$_COMMON" || {
+    echo "⊘  Could not load iris common lib" >&2
+    exit 1
 }
 
-# ── Update Dependencies ──────────────────────────
+# ── Defaults ──────────────────────────────────────────────────────────────────
+DEFAULT_BROWSER="chrome"
+DEFAULT_MAX_RES="1080"
+BROWSER="$DEFAULT_BROWSER"
+MAX_RES="$DEFAULT_MAX_RES"
+URL=""
+ALLOW_PLAYLIST=false
+
+# ── Help ──────────────────────────────────────────────────────────────────────
+show_help() {
+    render_help_banner "download-yt" "download-yt — help & usage"
+
+    render_help_section "USAGE"
+    echo "    download-yt ${DIM}[OPTIONS]${RESET} ${BOLD}<URL>${RESET}"
+    echo "    download-yt --update-deps"
+    echo ""
+
+    render_help_section "DESCRIPTION"
+    echo "    ${DIM}Downloads YouTube videos via yt-dlp using browser cookies for"
+    echo "    authenticated (age-gated / members-only) downloads."
+    echo "    Output is always saved as MP4 (H.264 + AAC)."
+    echo "    Use --update-deps to refresh yt-dlp when YouTube changes its player.${RESET}"
+    echo ""
+
+    render_help_section "OPTIONS"
+    render_help_option "-b, --browser <browser>" "Browser for cookies ${DIM}(default: ${DEFAULT_BROWSER})${RESET}"
+    render_help_option "" "                        ${DIM}Supported: chrome, firefox, safari, edge, brave, opera${RESET}"
+    render_help_option "-r, --resolution <res>" "Max video resolution ${DIM}(default: ${DEFAULT_MAX_RES}p)${RESET}"
+    render_help_option "" "                        ${DIM}Choices: 480, 720, 1080${RESET}"
+    render_help_option "-p, --playlist" "Allow entire playlist download"
+    render_help_option "-h, --help" "Show this help message"
+    render_help_option "--update-deps" "Update yt-dlp to the latest version"
+    echo ""
+
+    render_help_section "EXAMPLES"
+    echo "    ${DIM}download-yt 'https://youtube.com/watch?v=...'${RESET}"
+    echo "    ${DIM}download-yt -b firefox 'https://youtube.com/watch?v=...'${RESET}"
+    echo "    ${DIM}download-yt -r 720 'https://youtube.com/watch?v=...'${RESET}"
+    echo "    ${DIM}download-yt -p 'https://youtube.com/playlist?list=...'${RESET}"
+    echo "    ${DIM}download-yt -b safari -r 480 'https://youtube.com/watch?v=...'${RESET}"
+    echo ""
+
+    render_help_section "TROUBLESHOOTING"
+    echo "    ${DIM}\"Requested format is not available\" / \"n challenge solving failed\"${RESET}"
+    echo "    ${CYAN}→${RESET} Run: ${BOLD}download-yt --update-deps${RESET}"
+    echo ""
+    echo "    ${DIM}\"zsh: no matches found\" / URL split at & or ?${RESET}"
+    echo "    ${CYAN}→${RESET} Always quote URLs: ${BOLD}download-yt 'https://youtube.com/watch?v=...&t=7s'${RESET}"
+    echo ""
+}
+
+# ── Update Dependencies ───────────────────────────────────────────────────────
 if [[ "$1" == "--update-deps" ]]; then
-    echo "Updating yt-dlp..."
+    log_step "Updating yt-dlp…"
     if command -v brew &> /dev/null && brew list yt-dlp &> /dev/null; then
         brew upgrade yt-dlp
     elif command -v pip3 &> /dev/null && pip3 show yt-dlp &> /dev/null; then
@@ -68,19 +78,15 @@ if [[ "$1" == "--update-deps" ]]; then
     elif command -v yt-dlp &> /dev/null; then
         yt-dlp -U
     else
-        echo "❌  yt-dlp not found. Install it with: brew install yt-dlp"
-        exit 1
+        log_err "yt-dlp not found."
+        log_detail "Install it with: ${BOLD}brew install yt-dlp${RESET}" >&2
+        exit "$IRIS_EXIT_FAIL"
     fi
-    echo "✅  yt-dlp update complete!"
-    exit 0
+    log_success "yt-dlp update complete."
+    exit "$IRIS_EXIT_OK"
 fi
 
-# ── Argument Parsing ──────────────────────────
-BROWSER="$DEFAULT_BROWSER"
-MAX_RES="$DEFAULT_MAX_RES"
-URL=""
-ALLOW_PLAYLIST=false
-
+# ── Argument Parsing ──────────────────────────────────────────────────────────
 while [[ $# -gt 0 ]]; do
     case "$1" in
         -h | --help)
@@ -88,11 +94,11 @@ while [[ $# -gt 0 ]]; do
             exit 0
             ;;
         -b | --browser)
-            BROWSER="$2"
+            BROWSER="$(parse_flag_value --browser "$2")"
             shift 2
             ;;
         -r | --resolution)
-            MAX_RES="$2"
+            MAX_RES="$(parse_flag_value --resolution "$2")"
             shift 2
             ;;
         -p | --playlist)
@@ -100,9 +106,7 @@ while [[ $# -gt 0 ]]; do
             shift
             ;;
         -*)
-            echo "❌  Unknown option: $1"
-            echo "    Run '$SCRIPT_NAME --help' for usage."
-            exit 1
+            unknown_option "$1"
             ;;
         *)
             URL="$1"
@@ -111,51 +115,39 @@ while [[ $# -gt 0 ]]; do
     esac
 done
 
-# ── Validate URL ──────────────────────────────
+# ── Validation ────────────────────────────────────────────────────────────────
 if [[ -z "$URL" ]]; then
-    echo "❌  No URL provided."
-    echo "    Run '$SCRIPT_NAME --help' for usage."
-    exit 1
+    log_err "No URL provided."
+    log_detail "Run '${BOLD}download-yt --help${RESET}' for usage." >&2
+    exit "$IRIS_EXIT_USAGE"
 fi
 
-# ── Validate Resolution ───────────────────────
 case "$MAX_RES" in
     480 | 720 | 1080) ;;
     *)
-        echo "❌  Invalid resolution: ${MAX_RES}. Choose from 480, 720, or 1080."
-        exit 1
+        log_err "Invalid resolution: ${BOLD}${MAX_RES}${RESET}. Choose from 480, 720, or 1080."
+        exit "$IRIS_EXIT_USAGE"
         ;;
 esac
 
-# ── Validate Browser ──────────────────────────
 case "$BROWSER" in
     chrome | firefox | safari | edge | brave | opera) ;;
     *)
-        echo "❌  Unsupported browser: $BROWSER"
-        echo "    Supported: chrome, firefox, safari, edge, brave, opera"
-        exit 1
+        log_err "Unsupported browser: ${BOLD}${BROWSER}${RESET}."
+        log_detail "Supported: chrome, firefox, safari, edge, brave, opera" >&2
+        exit "$IRIS_EXIT_USAGE"
         ;;
 esac
 
-# ── Check Dependencies ───────────────────────
-if ! command -v yt-dlp &> /dev/null; then
-    echo "❌  yt-dlp is not installed."
-    echo "    Install it with: brew install yt-dlp"
-    exit 1
-fi
+require_command yt-dlp "Install with: brew install yt-dlp  •  or run: download-yt --update-deps"
 
-# ── Build Format String ───────────────────────
-# Prefer H.264 video up to MAX_RES + M4A audio, fallback to best mp4
+# ── Build Format String ───────────────────────────────────────────────────────
 FORMAT="bv*[vcodec^=avc][height<=${MAX_RES}]+ba[ext=m4a]/b[ext=mp4][height<=${MAX_RES}]/b[ext=mp4]/b"
 
-# ── Download ──────────────────────────────────
-# If playlist is disabled, strip playlist-related parameters from YouTube URLs
-# to avoid 429 errors when yt-dlp attempts to extract playlist metadata.
-if [ "$ALLOW_PLAYLIST" = false ]; then
+# ── Strip Playlist Params (when playlist disabled) ────────────────────────────
+if [[ "$ALLOW_PLAYLIST" == false ]]; then
     if [[ "$URL" == *"youtube.com"* ]] || [[ "$URL" == *"youtu.be"* ]]; then
-        # Strip list and index parameters
         CLEANED_URL=$(echo "$URL" | sed -e 's/[&?]list=[^&]*//g' -e 's/[&?]index=[^&]*//g')
-        # Fix potential malformed URL if the first parameter was removed
         if [[ "$CLEANED_URL" == *"watch&"* ]]; then
             CLEANED_URL="${CLEANED_URL/watch&/watch?}"
         fi
@@ -163,21 +155,24 @@ if [ "$ALLOW_PLAYLIST" = false ]; then
     fi
 fi
 
-echo "⬇️   Downloading:  $URL"
-echo "🌐  Browser:       $BROWSER"
-echo "📐  Max res:       ${MAX_RES}p"
-
-if [ "$ALLOW_PLAYLIST" = true ]; then
-    echo "📜  Playlist:      enabled"
+# ── Download Summary ──────────────────────────────────────────────────────────
+echo ""
+_thick_rule CYAN
+printf "  ${BOLD}Download${RESET}\n"
+_rule CYAN
+printf "  ${DIM}%-14s${RESET}  %s\n" "URL" "$URL"
+printf "  ${DIM}%-14s${RESET}  ${CYAN}%s${RESET}\n" "Browser" "$BROWSER"
+printf "  ${DIM}%-14s${RESET}  ${CYAN}%s${RESET}\n" "Max res" "${MAX_RES}p"
+if [[ "$ALLOW_PLAYLIST" == true ]]; then
+    printf "  ${DIM}%-14s${RESET}  ${GREEN}enabled${RESET}\n" "Playlist"
 else
-    echo "📜  Playlist:      disabled (single video)"
+    printf "  ${DIM}%-14s${RESET}  ${DIM}disabled (single video)${RESET}\n" "Playlist"
 fi
+_rule CYAN
 echo ""
 
 PLAYLIST_FLAG="--no-playlist"
-if [ "$ALLOW_PLAYLIST" = true ]; then
-    PLAYLIST_FLAG="--yes-playlist"
-fi
+[[ "$ALLOW_PLAYLIST" == true ]] && PLAYLIST_FLAG="--yes-playlist"
 
 yt-dlp \
     --cookies-from-browser "$BROWSER" \

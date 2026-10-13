@@ -6,78 +6,96 @@
 # ─────────────────────────────────────────────
 # IRIS_DESC: Verify GitHub SSH host aliases in ~/.ssh/config
 
+IRIS_SCRIPT_NAME="verify-ssh"
+
+# ── Load shared library ───────────────────────────────────────────────────────
+_COMMON="$(dirname "${BASH_SOURCE[0]}")/../../scripts/lib/common.sh"
+[[ -f "$_COMMON" ]] || _COMMON="$(dirname "${BASH_SOURCE[0]}")/../lib/common.sh"
+[[ -f "$_COMMON" ]] || _COMMON="${IRIS_LIB_DIR:-/usr/local/lib/iris}/lib/common.sh"
+# shellcheck source=scripts/lib/common.sh
+source "$_COMMON" || {
+    echo "⊘  Could not load iris common lib" >&2
+    exit 1
+}
+
 CONFIG_FILE="${HOME}/.ssh/config"
 
-if command -v tput &> /dev/null; then
-    BOLD=$(tput bold)
-    RESET=$(tput sgr0)
-    GREEN=$(tput setaf 2)
-    YELLOW=$(tput setaf 3)
-    RED=$(tput setaf 1)
-    CYAN=$(tput setaf 6)
-else
-    BOLD=""
-    RESET=""
-    GREEN=""
-    YELLOW=""
-    RED=""
-    CYAN=""
-fi
-
-summary_border() {
-    printf '%s\n' "${CYAN}────────────────────────────────────────────────────────${RESET}"
-}
-
+# ── Help ──────────────────────────────────────────────────────────────────────
 show_help() {
-    cat << EOF
+    render_help_banner "verify-ssh" "verify-ssh — help & usage"
 
-$(tput bold)USAGE$(tput sgr0)
-    verify-ssh [OPTIONS]
+    render_help_section "USAGE"
+    echo "    verify-ssh ${DIM}[OPTIONS]${RESET}"
+    echo "    iris verify-ssh ${DIM}[OPTIONS]${RESET}"
+    echo ""
 
-$(tput bold)DESCRIPTION$(tput sgr0)
-    Scans ~/.ssh/config for GitHub host entries (Host github_* and Host github.com)
-    and runs ssh -T git@<host> to verify that each SSH key and host alias work.
+    render_help_section "DESCRIPTION"
+    echo "    ${DIM}Scans ~/.ssh/config for GitHub host entries (Host github_* and"
+    echo "    Host github.com) and runs ssh -T git@<host> to verify that each"
+    echo "    SSH key and host alias work correctly.${RESET}"
+    echo ""
 
-$(tput bold)OPTIONS$(tput sgr0)
-    -h, --help      Show this help message
+    render_help_section "OPTIONS"
+    render_help_option "-h, --help" "Show this help message"
+    echo ""
 
-$(tput bold)EXAMPLES$(tput sgr0)
-    verify-ssh
-    iris verify-ssh
-
-EOF
+    render_help_section "EXAMPLES"
+    echo "    ${DIM}verify-ssh${RESET}"
+    echo "    ${DIM}iris verify-ssh${RESET}"
+    echo ""
 }
 
+# ── Argument Parsing ──────────────────────────────────────────────────────────
 while [[ $# -gt 0 ]]; do
     case "$1" in
         -h | --help)
             show_help
             exit 0
             ;;
+        -*)
+            unknown_option "$1"
+            ;;
         *)
-            echo "❌  Unknown option: $1"
-            echo "    Run 'verify-ssh --help' for usage."
-            exit 1
+            unknown_option "$1"
             ;;
     esac
 done
 
+# ── Host Collection ───────────────────────────────────────────────────────────
+HOSTS=()
+
 add_host() {
     local candidate="$1"
-    local existing
-
     for existing in "${HOSTS[@]}"; do
-        if [[ "$existing" == "$candidate" ]]; then
-            return
-        fi
+        [[ "$existing" == "$candidate" ]] && return
     done
-
     HOSTS+=("$candidate")
 }
 
+collect_hosts() {
+    local line trimmed alias
+    while IFS= read -r line || [[ -n "$line" ]]; do
+        case "$line" in
+            '' | [[:space:]]*#) continue ;;
+        esac
+        trimmed="${line#"${line%%[![:space:]]*}"}"
+        case "$trimmed" in
+            Host\ *)
+                for alias in $trimmed; do
+                    case "$alias" in
+                        Host) continue ;;
+                        github_*) add_host "$alias" ;;
+                        github.com) add_host "$alias" ;;
+                    esac
+                done
+                ;;
+        esac
+    done < "$CONFIG_FILE"
+}
+
+# ── SSH Result Classifier ─────────────────────────────────────────────────────
 classify_output() {
     local output="$1"
-
     if echo "$output" | grep -qi 'successfully authenticated'; then
         echo "ok"
     elif echo "$output" | grep -qi 'permission denied (publickey)'; then
@@ -95,170 +113,109 @@ classify_output() {
 
 status_label() {
     case "$1" in
-        ok)
-            printf '%sPASS%s' "$GREEN" "$RESET"
-            ;;
-        permission_denied)
-            printf '%sKEY FAIL%s' "$RED" "$RESET"
-            ;;
-        timeout)
-            printf '%sTIMEOUT%s' "$YELLOW" "$RESET"
-            ;;
-        dns)
-            printf '%sDNS FAIL%s' "$YELLOW" "$RESET"
-            ;;
-        network)
-            printf '%sNETWORK%s' "$YELLOW" "$RESET"
-            ;;
-        *)
-            printf '%sFAIL%s' "$RED" "$RESET"
-            ;;
+        ok) printf "${GREEN}PASS${RESET}" ;;
+        permission_denied) printf "${RED}KEY FAIL${RESET}" ;;
+        timeout) printf "${YELLOW}TIMEOUT${RESET}" ;;
+        dns) printf "${YELLOW}DNS FAIL${RESET}" ;;
+        network) printf "${YELLOW}NETWORK${RESET}" ;;
+        *) printf "${RED}FAIL${RESET}" ;;
     esac
 }
 
 reason_text() {
     case "$1" in
-        ok)
-            printf 'Authenticated'
-            ;;
-        permission_denied)
-            printf 'Permission denied (publickey)'
-            ;;
-        timeout)
-            printf 'Operation timed out'
-            ;;
-        dns)
-            printf 'Hostname resolution failed'
-            ;;
-        network)
-            printf 'Network connectivity failed'
-            ;;
-        *)
-            printf 'Unexpected SSH response'
-            ;;
+        ok) printf "Authenticated" ;;
+        permission_denied) printf "Permission denied (publickey)" ;;
+        timeout) printf "Operation timed out" ;;
+        dns) printf "Hostname resolution failed" ;;
+        network) printf "Network connectivity failed" ;;
+        *) printf "Unexpected SSH response" ;;
     esac
 }
 
-collect_hosts() {
-    local line trimmed alias
-
-    while IFS= read -r line || [[ -n "$line" ]]; do
-        case "$line" in
-            '' | [[:space:]]*#)
-                continue
-                ;;
-        esac
-
-        trimmed="${line#"${line%%[![:space:]]*}"}"
-        case "$trimmed" in
-            Host\ *)
-                for alias in $trimmed; do
-                    case "$alias" in
-                        Host)
-                            continue
-                            ;;
-                        github_*)
-                            add_host "$alias"
-                            ;;
-                        github.com)
-                            add_host "$alias"
-                            ;;
-                    esac
-                done
-                ;;
-        esac
-    done < "$CONFIG_FILE"
-}
-
+# ── Host Verifier ─────────────────────────────────────────────────────────────
 verify_host() {
     local host="$1"
-    local status
-    local classification
-
-    ssh -T -o BatchMode=yes -o ConnectTimeout=10 "git@$host" > /tmp/iris_verify_ssh.$$ 2>&1
-    status=$?
-    output=$(cat /tmp/iris_verify_ssh.$$)
-    rm -f /tmp/iris_verify_ssh.$$
-
-    classification=$(classify_output "$output")
-
-    RESULTS_HOSTS+=("$host")
-    RESULTS_CODES+=("$classification")
-
-    if [[ "$classification" == "ok" ]]; then
-        PASSED=$((PASSED + 1))
-        return 0
-    fi
-
-    if [[ $status -ne 0 ]]; then
-        FAILED=$((FAILED + 1))
-        return 1
-    fi
-
-    FAILED=$((FAILED + 1))
-    return 1
+    local tmpfile
+    tmpfile=$(mktemp /tmp/iris_verify_ssh.XXXXXX)
+    ssh -T -o BatchMode=yes -o ConnectTimeout=10 "git@${host}" > "$tmpfile" 2>&1
+    local output
+    output=$(cat "$tmpfile")
+    rm -f "$tmpfile"
+    classify_output "$output"
 }
 
+# ── Pre-flight ────────────────────────────────────────────────────────────────
 if [[ ! -f "$CONFIG_FILE" ]]; then
-    echo "❌  SSH config not found: $CONFIG_FILE"
-    exit 1
+    log_err "SSH config not found: ${BOLD}${CONFIG_FILE}${RESET}"
+    exit "$IRIS_EXIT_FAIL"
 fi
 
-HOSTS=()
 collect_hosts
 
 if [[ ${#HOSTS[@]} -eq 0 ]]; then
-    echo "❌  No GitHub SSH hosts found in $CONFIG_FILE"
-    exit 1
+    log_err "No GitHub SSH hosts found in ${BOLD}${CONFIG_FILE}${RESET}"
+    log_detail "Run ${BOLD}setup-ssh${RESET} to generate and register a host alias." >&2
+    exit "$IRIS_EXIT_FAIL"
 fi
+
+# ── Verification Loop ─────────────────────────────────────────────────────────
+echo ""
+_thick_rule CYAN
+printf "  ${BOLD}SSH Verification${RESET}  ${DIM}— %s${RESET}\n" "$CONFIG_FILE"
+_rule CYAN
+printf "  ${DIM}%-30s  %-12s  %s${RESET}\n" "Host" "Status" "Detail"
+_rule CYAN
 
 RESULTS_HOSTS=()
 RESULTS_CODES=()
 PASSED=0
 FAILED=0
 
-echo "${BOLD}SSH verification${RESET}"
-echo "Config: $CONFIG_FILE"
-echo "Hosts: ${#HOSTS[@]}"
-summary_border
-printf "%-28s %-12s %s\n" "Host" "Status" "Summary"
-summary_border
-
 for host in "${HOSTS[@]}"; do
-    verify_host "$host"
+    log_step "Checking ${BOLD}${host}${RESET}…"
+    classification=$(verify_host "$host")
+    RESULTS_HOSTS+=("$host")
+    RESULTS_CODES+=("$classification")
+    if [[ "$classification" == "ok" ]]; then
+        PASSED=$((PASSED + 1))
+    else
+        FAILED=$((FAILED + 1))
+    fi
 done
 
+# ── Results Table ─────────────────────────────────────────────────────────────
+_rule CYAN
 for i in "${!RESULTS_HOSTS[@]}"; do
     host="${RESULTS_HOSTS[$i]}"
-    classification="${RESULTS_CODES[$i]}"
-    printf '%-28s %s  %s\n' "$host" "$(status_label "$classification")" "$(reason_text "$classification")"
+    cls="${RESULTS_CODES[$i]}"
+    printf "  %-30s  %-20s  %s\n" "$host" "$(status_label "$cls")" "$(reason_text "$cls")"
 done
+_rule CYAN
+printf "  ${BOLD}%d${RESET} total  •  ${GREEN}%d passed${RESET}  •  ${RED}%d failed${RESET}\n" \
+    "${#HOSTS[@]}" "$PASSED" "$FAILED"
+_thick_rule CYAN
+echo ""
 
-summary_border
-printf 'Summary: %d total • %s%d%s passed • %s%d%s failed\n' "${#HOSTS[@]}" "$GREEN" "$PASSED" "$RESET" "$RED" "$FAILED" "$RESET"
-
+# ── Failed Hosts Detail ───────────────────────────────────────────────────────
 if [[ $FAILED -ne 0 ]]; then
+    render_help_section "Failed hosts"
     echo ""
-    echo "${BOLD}Failed hosts${RESET}"
     for i in "${!RESULTS_HOSTS[@]}"; do
-        classification="${RESULTS_CODES[$i]}"
-        if [[ "$classification" == "ok" ]]; then
-            continue
-        fi
-
+        cls="${RESULTS_CODES[$i]}"
+        [[ "$cls" == "ok" ]] && continue
         host="${RESULTS_HOSTS[$i]}"
-        printf '• %s — %s\n' "$host" "$(reason_text "$classification")"
+        printf "  ${RED}•${RESET}  ${BOLD}%s${RESET} — %s\n" "$host" "$(reason_text "$cls")"
     done
-
     echo ""
-    echo "${BOLD}Next steps${RESET}"
-    cat << 'EOF'
-- Re-run `iris setup-ssh` if the alias or key needs to be regenerated.
-- Check that the matching public key is uploaded to GitHub for each host.
-- Confirm the network can reach `github.com` if you see timeouts.
-EOF
-    exit 1
+    render_help_section "Next steps"
+    echo ""
+    printf "  ${CYAN}•${RESET}  Re-run ${BOLD}iris setup-ssh${RESET} if the alias or key needs to be regenerated.\n"
+    printf "  ${CYAN}•${RESET}  Check that the matching public key is uploaded to GitHub for each host.\n"
+    printf "  ${CYAN}•${RESET}  Confirm the network can reach ${BOLD}github.com${RESET} if you see timeouts.\n"
+    echo ""
+    exit "$IRIS_EXIT_FAIL"
 fi
 
+log_success "All ${BOLD}${#HOSTS[@]}${RESET} GitHub SSH host(s) verified successfully."
 echo ""
-echo "${GREEN}✅  All GitHub SSH hosts verified successfully.${RESET}"

@@ -6,131 +6,169 @@
 # ─────────────────────────────────────────────
 # IRIS_DESC: Generate SSH keys and configure GitHub access
 
-# ── Help ──────────────────────────────────────
-show_help() {
-    cat << EOF
+IRIS_SCRIPT_NAME="setup-ssh"
 
-$(tput bold)USAGE$(tput sgr0)
-    setup-ssh [OPTIONS]
-
-$(tput bold)DESCRIPTION$(tput sgr0)
-    Generates an ED25519 SSH key pair and configures a GitHub host alias in ~/.ssh/config.
-
-$(tput bold)OPTIONS$(tput sgr0)
-    -h, --help      Show this help message
-
-$(tput bold)EXAMPLES$(tput sgr0)
-    setup-ssh
-    iris setup-ssh
-
-EOF
+# ── Load shared library ───────────────────────────────────────────────────────
+_COMMON="$(dirname "${BASH_SOURCE[0]}")/../../scripts/lib/common.sh"
+[[ -f "$_COMMON" ]] || _COMMON="$(dirname "${BASH_SOURCE[0]}")/../lib/common.sh"
+[[ -f "$_COMMON" ]] || _COMMON="${IRIS_LIB_DIR:-/usr/local/lib/iris}/lib/common.sh"
+# shellcheck source=scripts/lib/common.sh
+source "$_COMMON" || {
+    echo "⊘  Could not load iris common lib" >&2
+    exit 1
 }
 
-# ── Argument Parsing ──────────────────────────
+# ── Defaults ──────────────────────────────────────────────────────────────────
+OPT_EMAIL=""
+OPT_USER=""
+SKIP_KEYGEN=false
+
+# ── Help ──────────────────────────────────────────────────────────────────────
+show_help() {
+    render_help_banner "setup-ssh" "setup-ssh — help & usage"
+
+    render_help_section "USAGE"
+    echo "    setup-ssh ${DIM}[OPTIONS]${RESET}"
+    echo "    iris setup-ssh ${DIM}[OPTIONS]${RESET}"
+    echo ""
+
+    render_help_section "DESCRIPTION"
+    echo "    ${DIM}Generates an ED25519 SSH key pair and configures a GitHub host"
+    echo "    alias in ~/.ssh/config. Prompts interactively for email and username"
+    echo "    unless --email / --user are provided.${RESET}"
+    echo ""
+
+    render_help_section "OPTIONS"
+    render_help_option "-h, --help" "Show this help message"
+    render_help_option "--email <email>" "Email for SSH key comment (skips prompt)"
+    render_help_option "--user <username>" "SSH username / GitHub handle (skips prompt)"
+    echo ""
+
+    render_help_section "EXAMPLES"
+    echo "    ${DIM}setup-ssh${RESET}"
+    echo "    ${DIM}setup-ssh --email you@example.com --user myhandle${RESET}"
+    echo "    ${DIM}iris setup-ssh${RESET}"
+    echo ""
+}
+
+# ── Argument Parsing ──────────────────────────────────────────────────────────
 while [[ $# -gt 0 ]]; do
     case "$1" in
         -h | --help)
             show_help
             exit 0
             ;;
+        --email)
+            OPT_EMAIL="$(parse_flag_value --email "$2")"
+            shift 2
+            ;;
+        --user)
+            OPT_USER="$(parse_flag_value --user "$2")"
+            shift 2
+            ;;
+        -*)
+            unknown_option "$1"
+            ;;
         *)
-            echo "❌  Unknown option: $1"
-            echo "    Run 'setup-ssh --help' for usage."
-            exit 1
+            unknown_option "$1"
             ;;
     esac
 done
 
-# Colors for output
-GREEN='\033[0;32m'
-BLUE='\033[0;34m'
-YELLOW='\033[1;33m'
-RED='\033[0;31m'
-NC='\033[0m' # No Color
+require_command ssh-keygen "ssh-keygen is required (part of OpenSSH, usually pre-installed)."
 
-echo -e "${BLUE}=== SSH Key Setup Script ===${NC}\n"
+echo ""
+_thick_rule CYAN
+printf "  ${BOLD}${CYAN}⚡  SSH Key Setup${RESET}\n"
+_rule CYAN
+echo ""
 
-# Prompt for email
-read -r -p "Enter your email (e.g., abc@gmail.com): " EMAIL
+# ── Email ─────────────────────────────────────────────────────────────────────
+if [[ -n "$OPT_EMAIL" ]]; then
+    EMAIL="$OPT_EMAIL"
+    log_info "Using email: ${BOLD}${EMAIL}${RESET}"
+else
+    printf "  ${CYAN}?${RESET}  Enter your email ${DIM}(e.g. you@example.com)${RESET}: "
+    read -r EMAIL
 
-if [[ ! "$EMAIL" =~ ^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$ ]]; then
-    echo -e "${YELLOW}⚠️  That does not look like a valid email address.${NC}"
-    read -r -p "Use ${EMAIL}@gmail.com as the email for setup? [y/N]: " USE_GMAIL
-
-    case "$USE_GMAIL" in
-        [yY] | [yY][eE][sS])
-            EMAIL="${EMAIL}@gmail.com"
-            echo -e "${GREEN}✓ Using email: ${EMAIL}${NC}"
-            ;;
-        *)
-            echo -e "${RED}✗ Invalid email input. Exiting without making changes.${NC}"
-            exit 1
-            ;;
-    esac
+    if [[ ! "$EMAIL" =~ ^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$ ]]; then
+        log_warn "That doesn't look like a valid email address."
+        printf "  ${YELLOW}?${RESET}  Use ${BOLD}${EMAIL}@gmail.com${RESET} instead? ${DIM}[y/N]${RESET}: "
+        read -r USE_GMAIL
+        case "$USE_GMAIL" in
+            [yY] | [yY][eE][sS])
+                EMAIL="${EMAIL}@gmail.com"
+                log_success "Using email: ${BOLD}${EMAIL}${RESET}"
+                ;;
+            *)
+                log_err "Invalid email input. Exiting without changes."
+                exit "$IRIS_EXIT_FAIL"
+                ;;
+        esac
+    fi
 fi
 
-# Extract username from email (part before @)
+# ── Username ──────────────────────────────────────────────────────────────────
 DEFAULT_USER=$(echo "$EMAIL" | cut -d'@' -f1)
 
-# Ask for confirmation or override
-echo -e "\n${YELLOW}Default SSH username will be: ${DEFAULT_USER}${NC}"
-read -r -p "Press Enter to use default, or type a custom username: " CUSTOM_USER
-
-# Use custom username if provided, otherwise use default
-if [ -z "$CUSTOM_USER" ]; then
-    SSH_USER="$DEFAULT_USER"
-    echo -e "${GREEN}✓ Using default SSH username: ${SSH_USER}${NC}"
+if [[ -n "$OPT_USER" ]]; then
+    SSH_USER="$OPT_USER"
+    log_info "Using username: ${BOLD}${SSH_USER}${RESET}"
 else
-    SSH_USER="$CUSTOM_USER"
-    echo -e "${GREEN}✓ Using custom SSH username: ${SSH_USER}${NC}"
+    echo ""
+    log_detail "Default SSH username: ${BOLD}${DEFAULT_USER}${RESET}"
+    printf "  ${CYAN}?${RESET}  Press Enter to use default, or type a custom username: "
+    read -r CUSTOM_USER
+    SSH_USER="${CUSTOM_USER:-$DEFAULT_USER}"
+    log_success "Using username: ${BOLD}${SSH_USER}${RESET}"
 fi
 
-# Generate SSH key
+# ── Generate Key ──────────────────────────────────────────────────────────────
 mkdir -p "$HOME/.ssh"
 chmod 700 "$HOME/.ssh"
 key_path="$HOME/.ssh/id_ed25519_${SSH_USER}"
 
 if [[ -f "$key_path" ]]; then
-    echo -e "\n${YELLOW}⚠️  SSH key already exists: ${key_path}${NC}"
-    read -r -p "Overwrite existing key? [y/N]: " OVERWRITE_KEY
-    case "$OVERWRITE_KEY" in
-        [yY] | [yY][eE][sS])
-            echo -e "${YELLOW}→ Overwriting existing key...${NC}"
-            ;;
-        *)
-            echo -e "${GREEN}✓ Keeping existing key.${NC}"
-            SKIP_KEYGEN=true
-            ;;
-    esac
-fi
-
-if [[ "$SKIP_KEYGEN" != true ]]; then
-    echo -e "\n${YELLOW}→ Generating ED25519 SSH key pair...${NC}"
-    if ssh-keygen -t ed25519 -C "$EMAIL" -f "$key_path" -N "" -q; then
-        echo -e "${GREEN}✓ SSH key pair generated successfully${NC}"
-        echo -e "  Private key: $key_path"
-        echo -e "  Public key:  ${key_path}.pub"
+    echo ""
+    log_warn "SSH key already exists: ${BOLD}${key_path}${RESET}"
+    if confirm_prompt "Overwrite existing key?"; then
+        log_step "Overwriting existing key…"
     else
-        echo -e "${RED}✗ Failed to generate SSH key${NC}"
-        exit 1
+        log_success "Keeping existing key."
+        SKIP_KEYGEN=true
     fi
 fi
 
-# Set proper permissions
-echo -e "\n${YELLOW}→ Setting secure permissions (600) on private key...${NC}"
-chmod 600 "$key_path"
-echo -e "${GREEN}✓ Permissions set successfully${NC}"
+if [[ "$SKIP_KEYGEN" != true ]]; then
+    echo ""
+    log_step "Generating ED25519 SSH key pair…"
+    if ssh-keygen -t ed25519 -C "$EMAIL" -f "$key_path" -N "" -q; then
+        log_success "SSH key pair generated."
+        log_detail "Private key: ${BOLD}${key_path}${RESET}"
+        log_detail "Public key:  ${BOLD}${key_path}.pub${RESET}"
+    else
+        log_err "Failed to generate SSH key."
+        exit "$IRIS_EXIT_FAIL"
+    fi
+fi
 
-# Create or update SSH config
+# ── Permissions ───────────────────────────────────────────────────────────────
+echo ""
+log_step "Setting secure permissions (600) on private key…"
+chmod 600 "$key_path"
+log_success "Permissions set."
+
+# ── SSH Config ────────────────────────────────────────────────────────────────
 CONFIG_FILE="$HOME/.ssh/config"
 touch "$CONFIG_FILE"
 chmod 600 "$CONFIG_FILE"
 
 if grep -q "Host github_${SSH_USER}" "$CONFIG_FILE"; then
-    echo -e "\n${GREEN}✓ SSH config already contains host: github_${SSH_USER}. Skipping.${NC}"
+    echo ""
+    log_success "SSH config already contains host: ${BOLD}github_${SSH_USER}${RESET}. Skipping."
 else
-    echo -e "\n${YELLOW}→ Adding configuration to ~/.ssh/config...${NC}"
-    # Append to SSH config
+    echo ""
+    log_step "Adding entry to ~/.ssh/config…"
     {
         printf '\n'
         printf 'Host github_%s\n' "$SSH_USER"
@@ -139,31 +177,39 @@ else
         printf '  User git\n'
         printf '  IdentitiesOnly yes\n'
     } >> "$CONFIG_FILE"
-    echo -e "${GREEN}✓ SSH config updated successfully${NC}"
+    log_success "SSH config updated."
 fi
 
-# Display public key
-echo -e "\n${BLUE}=== Your Public Key ===${NC}"
-echo -e "${YELLOW}Copy this key and add it to your GitHub account:${NC}\n"
+# ── Public Key Display ────────────────────────────────────────────────────────
+echo ""
+_thick_rule CYAN
+printf "  ${BOLD}Your Public Key${RESET}\n"
+_rule CYAN
+log_detail "Copy this key and add it to your GitHub account:"
+echo ""
 cat "${key_path}.pub"
 echo ""
 
-# Usage instructions
-echo -e "\n${BLUE}=== Next Steps ===${NC}"
-echo -e "1. Copy the public key above"
-echo -e "2. Go to GitHub → Settings → SSH and GPG keys → New SSH key"
-echo -e "3. Paste your public key and save"
-echo -e "\n${BLUE}=== Setting up Git Directory ===${NC}"
+# ── Next Steps ────────────────────────────────────────────────────────────────
+_thick_rule CYAN
+printf "  ${BOLD}Next Steps${RESET}\n"
+_rule CYAN
+echo ""
+printf "  ${CYAN}1.${RESET}  Copy the public key above\n"
+printf "  ${CYAN}2.${RESET}  Go to ${BOLD}GitHub → Settings → SSH and GPG keys → New SSH key${RESET}\n"
+printf "  ${CYAN}3.${RESET}  Paste your public key and save\n"
+echo ""
 
-# Create git directories
-echo -e "${YELLOW}→ Creating ~/git/github_${SSH_USER}/ directory...${NC}"
+log_step "Creating directory ~/git/github_${SSH_USER}/…"
 mkdir -p "$HOME/git/github_${SSH_USER}"
-echo -e "${GREEN}✓ Directory created: ~/git/github_${SSH_USER}${NC}"
-echo -e "${YELLOW}💡 Run: cd ~/git/github_${SSH_USER}${NC}"
+log_success "Directory ready: ${BOLD}~/git/github_${SSH_USER}${RESET}"
 
-echo -e "\n${BLUE}=== How to Clone Repositories ===${NC}"
-echo -e "Replace ${YELLOW}github.com${NC} with ${YELLOW}github_${SSH_USER}${NC} in your clone commands:\n"
-echo -e "${GREEN}Example:${NC}"
-echo -e "  git clone git@github_${SSH_USER}:${SSH_USER}/hello-world.git"
-echo -e "\n${YELLOW}💡 cd ~/git/github_${SSH_USER}/ — then clone your repos!${NC}"
-echo -e "${GREEN}Setup complete! 🎉${NC}\n"
+echo ""
+_rule CYAN
+printf "  ${BOLD}Clone repos using:${RESET}\n"
+echo ""
+printf "  ${DIM}git clone git@github_${SSH_USER}:${SSH_USER}/hello-world.git${RESET}\n"
+printf "  ${DIM}cd ~/git/github_${SSH_USER}/ — then clone your repos!${RESET}\n"
+echo ""
+log_success "Setup complete! 🎉"
+echo ""

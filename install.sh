@@ -108,6 +108,31 @@ for script in "${SCRIPTS[@]}"; do
     fi
 done
 
+# Install shared shell library (scripts/lib/common.sh → $IRIS_LIB/lib/common.sh)
+echo "  → lib/common.sh (shared shell library)"
+if [[ -f "$SCRIPT_DIR/scripts/lib/common.sh" ]]; then
+    if [[ "$IS_WINDOWS" == true ]]; then
+        mkdir -p "$IRIS_LIB/lib"
+        cp "$SCRIPT_DIR/scripts/lib/common.sh" "$IRIS_LIB/lib/common.sh"
+    else
+        sudo mkdir -p "$IRIS_LIB/lib"
+        sudo cp "$SCRIPT_DIR/scripts/lib/common.sh" "$IRIS_LIB/lib/common.sh"
+    fi
+else
+    curl -sL "$REPO_URL/scripts/lib/common.sh" -o /tmp/iris_common.sh
+    if [[ -f "/tmp/iris_common.sh" ]]; then
+        if [[ "$IS_WINDOWS" == true ]]; then
+            mkdir -p "$IRIS_LIB/lib"
+            mv /tmp/iris_common.sh "$IRIS_LIB/lib/common.sh"
+        else
+            sudo mkdir -p "$IRIS_LIB/lib"
+            sudo mv /tmp/iris_common.sh "$IRIS_LIB/lib/common.sh"
+        fi
+    else
+        echo "  ❌ Failed to download lib/common.sh"
+    fi
+fi
+
 # Install power_cleaner Python package (lives beside power-clean.sh in $IRIS_LIB)
 echo "  → power_cleaner (Python package)"
 if [[ -d "$SCRIPT_DIR/scripts/power_cleaner" ]]; then
