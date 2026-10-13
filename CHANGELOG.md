@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.1.0](https://github.com/rhythwitty/bashiris/compare/v2.0.2...v2.1.0) (2026-10-13)
+
+
+### Features
+
+* add power-clean script ([70cdc18](https://github.com/rhythwitty/bashiris/commit/70cdc18a0e7700ffe1e94a5929c2d95302171e55))
+
 ## [2.0.2](https://github.com/rhythwitty/bashiris/compare/v2.0.1...v2.0.2) (2026-05-11)
 
 
