@@ -19,40 +19,21 @@ source "$_COMMON" || {
 
 show_help() {
     cat << EOF
-
-${BOLD}${CYAN}  ╭──────────────────────────────────────────╮${RESET}
-${BOLD}${CYAN}  │${RESET}  ${BOLD}⚡  ChromePower Cleaner${RESET}${BOLD}${CYAN}                  │${RESET}
-${BOLD}${CYAN}  │${RESET}${DIM}     power-clean — help & usage${RESET}${BOLD}${CYAN}            │${RESET}
-${BOLD}${CYAN}  ╰──────────────────────────────────────────╯${RESET}
+${BOLD}${CYAN}  ⚡ ChromePower Cleaner${RESET} ${DIM}— Safe storage analyzer & cache cleanup${RESET}
 
 ${BOLD}USAGE${RESET}
-    iris power-clean ${DIM}[OPTIONS]${RESET}
-    power-clean      ${DIM}[OPTIONS]${RESET}
-
-${BOLD}DESCRIPTION${RESET}
-    ${DIM}Safe ChromePower storage analysis and cache cleanup tool.
-    Accounts for all storage, protects active Chrome instances,
-    and safely cleans regenerable caches without removing user data.${RESET}
-
-    ${CYAN}Default root:${RESET}  ~/Documents/ChromePowerCache/chrome
-    ${CYAN}Override with:${RESET} export CHROME_POWER_ROOT=/path/to/chrome
+    iris power-clean ${DIM}[OPTIONS]${RESET}    ${DIM}(default root: ~/Documents/ChromePowerCache/chrome)${RESET}
 
 ${BOLD}OPTIONS${RESET}
-    ${CYAN}-h, --help${RESET}              Show this help message
-    ${CYAN}--root${RESET} ${DIM}<path>${RESET}           ChromePower cache root path
-    ${CYAN}--dry-run${RESET}               Show cleanup actions without deleting anything
-    ${CYAN}--clean-safe${RESET}            Batch clean ${GREEN}safe${RESET} (regenerable) caches
-    ${CYAN}--clean-low-risk${RESET}        Batch clean ${CYAN}low-risk${RESET} caches
-    ${CYAN}-y, --yes, --no-confirm${RESET} Bypass interactive confirmation prompts
-    ${CYAN}--json${RESET}                  Output full analysis as JSON to stdout and exit
-    ${CYAN}--version${RESET}               Show version number
+    ${CYAN}-h, --help${RESET}              Show this help message       ${CYAN}--clean-safe${RESET}            Batch clean safe caches
+    ${CYAN}--root${RESET} ${DIM}<path>${RESET}           ChromePower cache root path  ${CYAN}--clean-low-risk${RESET}        Batch clean low-risk caches
+    ${CYAN}--dry-run${RESET}               Show actions without delete  ${CYAN}-y, --yes, --no-confirm${RESET} Skip confirmation prompts
+    ${CYAN}--json${RESET}                  Output analysis as JSON      ${CYAN}--version${RESET}               Show version number
 
 ${BOLD}EXAMPLES${RESET}
-    ${DIM}iris power-clean${RESET}
-    ${DIM}iris power-clean --dry-run${RESET}
-    ${DIM}iris power-clean --clean-safe -y${RESET}
-    ${DIM}iris power-clean --clean-low-risk${RESET}
-    ${DIM}iris power-clean --root ~/Documents/ChromePowerCache/chrome${RESET}
+    ${DIM}iris power-clean                  # Interactive dashboard${RESET}
+    ${DIM}iris power-clean --dry-run        # Preview cleanup actions${RESET}
+    ${DIM}iris power-clean --clean-safe -y  # Batch clean safe caches${RESET}
 
 EOF
 }
