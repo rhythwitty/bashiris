@@ -307,6 +307,9 @@ def render_overview(aggregate: AggregateReport) -> str:
 
     t = aggregate.total_size
     pct_safe = human_percent(aggregate.safe_size, t)
+    pct_low = human_percent(aggregate.low_risk_size, t)
+    pct_rev = human_percent(aggregate.review_size, t)
+
     s_bar = render_mini_bar(aggregate.safe_size, t, width=8, color_fn=theme.safe)
     l_bar = render_mini_bar(aggregate.low_risk_size, t, width=8, color_fn=theme.low_risk)
     r_bar = render_mini_bar(aggregate.review_size, t, width=8, color_fn=theme.review)
@@ -317,9 +320,11 @@ def render_overview(aggregate: AggregateReport) -> str:
 
     low_lbl = theme.muted(pad_right("Low-risk:", 10))
     low_val = theme.low_risk(pad_left(format_size(aggregate.low_risk_size), 8))
+    low_pct = theme.muted(pad_left(pct_low, 6))
 
     rev_lbl = theme.muted(pad_right("Review:", 10))
     rev_val = theme.review(pad_left(format_size(aggregate.review_size), 8))
+    rev_pct = theme.muted(pad_left(pct_rev, 6))
 
     prot_lbl = theme.muted(pad_right("Protected:", 14))
     prot_val = theme.protected(pad_left(format_size(aggregate.protected_size), 9))
@@ -330,16 +335,14 @@ def render_overview(aggregate: AggregateReport) -> str:
     inacc_lbl = theme.muted(pad_right("Inaccessible:", 14))
     inacc_val = pad_left(format_size(aggregate.inaccessible_size), 9)
 
-    blank_pct = " " * 6
-
     lines.append(
         f"  {safe_lbl} {safe_val}  {s_bar} {safe_pct}   │   {prot_lbl} {prot_val}"
     )
     lines.append(
-        f"  {low_lbl} {low_val}  {l_bar} {blank_pct}   │   {unk_lbl} {unk_val}"
+        f"  {low_lbl} {low_val}  {l_bar} {low_pct}   │   {unk_lbl} {unk_val}"
     )
     lines.append(
-        f"  {rev_lbl} {rev_val}  {r_bar} {blank_pct}   │   {inacc_lbl} {inacc_val}"
+        f"  {rev_lbl} {rev_val}  {r_bar} {rev_pct}   │   {inacc_lbl} {inacc_val}"
     )
     lines.append(_rule(W, "─", theme.muted if theme.enabled else None))
 
@@ -351,7 +354,7 @@ def render_overview(aggregate: AggregateReport) -> str:
         )
     if aggregate.largest_cleanup and aggregate.largest_cleanup.safe_size > 0:
         hi_parts.append(
-            f"{theme.muted('Top cleanup opp:')} {theme.highlight(aggregate.largest_cleanup.name)} {theme.safe(format_size(aggregate.largest_cleanup.safe_size) + ' free')}"
+            f"{theme.muted('Top cleanup opp:')} {theme.highlight(aggregate.largest_cleanup.name)} {theme.safe('(' + format_size(aggregate.largest_cleanup.safe_size) + ' safe)')}"
         )
     if hi_parts:
         lines.append("  " + "  │  ".join(hi_parts))
@@ -367,10 +370,13 @@ def render_overview(aggregate: AggregateReport) -> str:
                 largest_unk_path = it.relative_path
 
     if largest_unk_size > 0:
+        display_path = largest_unk_path
+        if len(display_path) > 36:
+            display_path = display_path[:17] + "…" + display_path[-18:]
         lines.append(
             f"  {theme.muted('Largest unknown:')} "
-            f"{theme.unknown(largest_unk_browser + ' / ' + largest_unk_path)} "
-            f"{theme.dim(format_size(largest_unk_size))}"
+            f"{theme.highlight(largest_unk_browser)} {theme.muted('›')} {theme.unknown(display_path)} "
+            f"{theme.dim('(' + format_size(largest_unk_size) + ')')}"
         )
 
     return "\n".join(lines)
@@ -455,7 +461,7 @@ def render_browser_table(
 
 def render_browser_details(report: BrowserReport) -> str:
     """Render comprehensive inspection breakdown for a single browser."""
-    W = 76
+    W = 72
 
     lines = [
         "",
@@ -474,6 +480,9 @@ def render_browser_details(report: BrowserReport) -> str:
 
     t = report.total_size
     pct_safe = human_percent(report.safe_size, t)
+    pct_low = human_percent(report.low_risk_size, t)
+    pct_rev = human_percent(report.review_size, t)
+
     s_bar = render_mini_bar(report.safe_size, t, width=8, color_fn=theme.safe)
     l_bar = render_mini_bar(report.low_risk_size, t, width=8, color_fn=theme.low_risk)
     r_bar = render_mini_bar(report.review_size, t, width=8, color_fn=theme.review)
@@ -496,11 +505,13 @@ def render_browser_details(report: BrowserReport) -> str:
     safe_val = theme.safe(pad_left(format_size(report.safe_size), 8))
     safe_pct = theme.muted(pad_left(pct_safe, 6))
 
-    low_lbl = theme.muted(pad_right("Low risk:", 10))
+    low_lbl = theme.muted(pad_right("Low-risk:", 10))
     low_val = theme.low_risk(pad_left(format_size(report.low_risk_size), 8))
+    low_pct = theme.muted(pad_left(pct_low, 6))
 
     rev_lbl = theme.muted(pad_right("Review:", 10))
     rev_val = theme.review(pad_left(format_size(report.review_size), 8))
+    rev_pct = theme.muted(pad_left(pct_rev, 6))
 
     prot_lbl = theme.muted(pad_right("Protected:", 14))
     prot_val = theme.protected(pad_left(format_size(report.protected_size), 9))
@@ -511,16 +522,14 @@ def render_browser_details(report: BrowserReport) -> str:
     inacc_lbl = theme.muted(pad_right("Inaccessible:", 14))
     inacc_val = pad_left(format_size(report.inaccessible_size), 9)
 
-    blank_pct = " " * 6
-
     lines.append(
         f"  {safe_lbl} {safe_val}  {s_bar} {safe_pct}   │   {prot_lbl} {prot_val}"
     )
     lines.append(
-        f"  {low_lbl} {low_val}  {l_bar} {blank_pct}   │   {unk_lbl} {unk_val}"
+        f"  {low_lbl} {low_val}  {l_bar} {low_pct}   │   {unk_lbl} {unk_val}"
     )
     lines.append(
-        f"  {rev_lbl} {rev_val}  {r_bar} {blank_pct}   │   {inacc_lbl} {inacc_val}"
+        f"  {rev_lbl} {rev_val}  {r_bar} {rev_pct}   │   {inacc_lbl} {inacc_val}"
     )
     lines.append(_rule(W, "─", theme.muted if theme.enabled else None))
 

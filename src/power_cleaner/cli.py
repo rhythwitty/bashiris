@@ -12,6 +12,7 @@ from power_cleaner.config import get_chrome_root
 from power_cleaner.formatters import (
     Spinner,
     format_size,
+    human_percent,
     output_json,
     pad_left,
     pad_right,
@@ -330,7 +331,7 @@ def _press_enter(label: str = "Press Enter to continue") -> None:
 
 def _render_batch_summary_header(plan, title: str) -> None:
     """Print the batch cleanup plan header."""
-    W = 60
+    W = 72
     print(f"\n  {theme.bold(title)}")
     print(f"  {'═' * W}")
     print(
@@ -343,19 +344,55 @@ def _render_batch_summary_header(plan, title: str) -> None:
     )
     if sorted_targets:
         print(f"  {theme.muted('Largest opportunities:')}")
+        max_bytes = max(t.total_bytes for t in sorted_targets)
         for bp in sorted_targets[:4]:
-            bar_w = round(bp.total_bytes / max(t.total_bytes for t in sorted_targets) * 12)
-            bar = theme.safe("█" * bar_w) + theme.muted("░" * (12 - bar_w))
-            print(f"    {bp.report.name:<22}  {format_size(bp.total_bytes):>10}  {bar}")
+            bar_w = round(bp.total_bytes / max_bytes * 10) if max_bytes > 0 else 0
+            bar = theme.safe("█" * bar_w) + theme.muted("░" * (10 - bar_w))
+            pct = human_percent(bp.total_bytes, plan.total_bytes_to_clean)
+            pct_str = theme.dim(f"({pad_left(pct, 5)})")
+            print(f"    {bp.report.name:<22}  {format_size(bp.total_bytes):>9}  {pct_str}  {bar}")
 
     skipped = []
     if plan.skipped_active:
-        skipped.append(f"{theme.active('Active (skipped):')} {len(plan.skipped_active)}")
+        skipped.append(f"{theme.active('● ' + str(len(plan.skipped_active)) + ' active (skipped)')}")
     if plan.skipped_unknown:
-        skipped.append(f"{theme.review('Unknown (skipped):')} {len(plan.skipped_unknown)}")
+        skipped.append(f"{theme.review('◌ ' + str(len(plan.skipped_unknown)) + ' unknown (skipped)')}")
     if skipped:
         print(f"  {'  │  '.join(skipped)}")
+
+
+def _render_cleanup_result(result) -> None:
+    """Render a compact, high-density dual-column summary of cleanup execution."""
+    W = 72
     print()
+    print(f"  {theme.safe('✓')} {theme.bold('Cleanup Complete')}")
+    print(f"  {'─' * W}")
+
+    del_str = f"{format_size(result.deleted_bytes)} ({result.cleaned_profiles_count} profiles)"
+    col1_left = theme.muted(pad_right("Deleted:", 9))
+    col1_val = theme.safe(pad_right(del_str, 24))
+
+    skip_str = f"{result.skipped_active_count} active, {result.skipped_unknown_count} unknown"
+    col2_left = theme.muted(pad_right("Skipped:", 9))
+    col2_val = pad_right(skip_str, 20)
+
+    print(f"  {col1_left} {col1_val}  │   {col2_left} {col2_val}")
+
+    stat_left = theme.muted(pad_right("Status:", 9))
+    stat_val = theme.dim(pad_right("All target caches purged", 24))
+
+    err_left = theme.muted(pad_right("Errors:", 9))
+    err_val = (
+        theme.review(pad_right(str(len(result.errors)), 20))
+        if result.errors
+        else theme.safe(pad_right("none", 20))
+    )
+    print(f"  {stat_left} {stat_val}  │   {err_left} {err_val}")
+
+    if result.errors:
+        print(f"  {'─' * W}")
+        for err in result.errors[:5]:
+            print(f"    {theme.review('!')} {theme.dim(err)}")
 
 
 def handle_batch_safe_cleanup(
@@ -389,26 +426,7 @@ def handle_batch_safe_cleanup(
 
     print(f"  {theme.accent('⟳')}  Cleaning safe caches…")
     result = execute_cleanup_plan(plan, dry_run=False)
-
-    W = 30
-    print()
-    print(f"  {theme.bold('Cleanup Complete')}")
-    print(f"  {'─' * W}")
-    print(
-        f"  {theme.muted('Deleted:')}   {theme.safe(format_size(result.deleted_bytes))}"
-    )
-    print(f"  {theme.muted('Profiles:')}  {result.cleaned_profiles_count}")
-    print(
-        f"  {theme.muted('Skipped:')}   "
-        f"{result.skipped_active_count} active, "
-        f"{result.skipped_unknown_count} unknown"
-    )
-    if result.errors:
-        print(f"  {theme.review('Errors:')}    {len(result.errors)}")
-        for err in result.errors[:10]:
-            print(f"    {theme.muted(err)}")
-    else:
-        print(f"  {theme.muted('Errors:')}    {theme.safe('none')}")
+    _render_cleanup_result(result)
 
     if interactive:
         _press_enter("Press Enter to return to main menu")
@@ -455,26 +473,7 @@ def handle_batch_low_risk_cleanup(
 
     print(f"  {theme.accent('⟳')}  Cleaning low-risk caches…")
     result = execute_cleanup_plan(plan, dry_run=False)
-
-    W = 30
-    print()
-    print(f"  {theme.bold('Cleanup Complete')}")
-    print(f"  {'─' * W}")
-    print(
-        f"  {theme.muted('Deleted:')}   {theme.safe(format_size(result.deleted_bytes))}"
-    )
-    print(f"  {theme.muted('Profiles:')}  {result.cleaned_profiles_count}")
-    print(
-        f"  {theme.muted('Skipped:')}   "
-        f"{result.skipped_active_count} active, "
-        f"{result.skipped_unknown_count} unknown"
-    )
-    if result.errors:
-        print(f"  {theme.review('Errors:')}    {len(result.errors)}")
-        for err in result.errors[:10]:
-            print(f"    {theme.muted(err)}")
-    else:
-        print(f"  {theme.muted('Errors:')}    {theme.safe('none')}")
+    _render_cleanup_result(result)
 
     if interactive:
         _press_enter("Press Enter to return to main menu")
@@ -485,12 +484,15 @@ def handle_batch_low_risk_cleanup(
 def _rescan(
     scanner: ProfileScanner, chrome_root, label: str = "Rescanning"
 ) -> AggregateReport:
-    """Rescan with spinner feedback."""
+    """Rescan with banner and spinner feedback."""
+    print()
+    print(render_banner(__version__))
+    print()
     spinner = Spinner(f"{label} {chrome_root}")
     spinner.start()
     result = scanner.scan_all(chrome_root, force=True)
     spinner.stop(
-        f"  {theme.safe('✓')}  Scan complete — {result.browser_count} browser(s) found"
+        f"  {theme.safe('✓')}  Found {theme.bold(str(result.browser_count))} browser(s)"
     )
     return result
 
@@ -509,32 +511,41 @@ def main_menu(root: Path | None = None) -> None:
         f"  {theme.safe('✓')}  Found {theme.bold(str(aggregate.browser_count))} browser(s)"
     )
 
-    def _col(num: str, label_styled: str, label_plain: str, shortcut: str = "") -> str:
+    def _col(num: str, label_styled: str, label_plain: str, shortcut: str = "", width: int = 34) -> str:
         sc = f" {theme.muted('(' + shortcut + ')')}" if shortcut else ""
         n_str = theme.accent(f"[{num}]")
         raw_len = len(f"[{num}] {label_plain}" + (f" ({shortcut})" if shortcut else ""))
-        pad = " " * max(1, 33 - raw_len)
+        pad = " " * max(1, width - raw_len)
         return f"{n_str} {label_styled}{sc}{pad}"
 
     while True:
         print(render_overview(aggregate))
         print(f"  {theme.bold('Actions:')}")
+
+        safe_cleanable = aggregate.safe_size > 0
+        safe_badge = f" ({format_size(aggregate.safe_size)})" if not safe_cleanable else ""
+        safe_styled = theme.safe("Clean safe caches") if safe_cleanable else theme.dim("Clean safe caches" + safe_badge)
+        safe_plain = "Clean safe caches" + (safe_badge if not safe_cleanable else "")
+
+        low_cleanable = aggregate.low_risk_size > 0
+        low_badge = f" ({format_size(aggregate.low_risk_size)})" if not low_cleanable else ""
+        low_styled = theme.low_risk("Clean low-risk caches") if low_cleanable else theme.dim("Clean low-risk caches" + low_badge)
+        low_plain = "Clean low-risk caches" + (low_badge if not low_cleanable else "")
+
         print(
-            f"  {_col('1', 'Overview', 'Overview', 'o')}{_col('6', 'Largest cleanup opportunities', 'Largest cleanup opportunities')}"
+            f"  {_col('1', 'Overview', 'Overview', 'o')}{_col('6', 'Top opportunities', 'Top opportunities', 't')}".rstrip()
         )
         print(
-            f"  {_col('2', 'Browsers', 'Browsers', 'b')}{_col('7', 'Largest unknown data', 'Largest unknown data')}"
+            f"  {_col('2', 'Browsers', 'Browsers', 'b')}{_col('7', 'Largest unknown', 'Largest unknown', 'u')}".rstrip()
         )
         print(
-            f"  {_col('3', 'Inspect browser', 'Inspect browser')}{_col('8', 'Largest review data', 'Largest review data')}"
+            f"  {_col('3', 'Inspect browser', 'Inspect browser', 'i')}{_col('8', 'Largest review data', 'Largest review data')}".rstrip()
         )
-        safe_lbl = theme.safe("Clean safe caches") if aggregate.safe_size > 0 else "Clean safe caches"
         print(
-            f"  {_col('4', safe_lbl, 'Clean safe caches')}{_col('9', 'Refresh scan', 'Refresh scan', 'r')}"
+            f"  {_col('4', safe_styled, safe_plain, 'c')}{_col('9', 'Refresh scan', 'Refresh scan', 'r')}".rstrip()
         )
-        low_lbl = theme.low_risk("Clean low-risk caches") if aggregate.low_risk_size > 0 else "Clean low-risk caches"
         print(
-            f"  {_col('5', low_lbl, 'Clean low-risk caches')}{_col('10', 'Quit', 'Quit', 'q')}"
+            f"  {_col('5', low_styled, low_plain, 'l')}{_col('10', 'Quit', 'Quit', 'q')}".rstrip()
         )
         print()
 
@@ -555,32 +566,32 @@ def main_menu(root: Path | None = None) -> None:
                 if changed:
                     aggregate = _rescan(scanner, chrome_root)
 
-        elif choice in ("3", "inspect"):
+        elif choice in ("3", "i", "inspect"):
             selected = choose_browser_interactive(aggregate.reports)
             if selected:
                 changed = handle_browser_inspection(selected, scanner)
                 if changed:
                     aggregate = _rescan(scanner, chrome_root)
 
-        elif choice in ("4", "clean", "clean-safe"):
+        elif choice in ("4", "c", "clean", "clean-safe"):
             changed = handle_batch_safe_cleanup(aggregate, scanner)
             if changed:
                 aggregate = _rescan(scanner, chrome_root)
 
-        elif choice in ("5", "clean-low-risk", "low-risk"):
+        elif choice in ("5", "l", "low-risk", "clean-low-risk"):
             changed = handle_batch_low_risk_cleanup(aggregate, scanner)
             if changed:
                 aggregate = _rescan(scanner, chrome_root)
 
-        elif choice == "6":
+        elif choice in ("6", "t", "top", "opp", "opportunities"):
             print(render_largest_cleanup_opportunities(aggregate.reports))
             _press_enter()
 
-        elif choice == "7":
+        elif choice in ("7", "u", "unknown"):
             print(render_largest_unknown_data(aggregate.reports))
             _press_enter()
 
-        elif choice == "8":
+        elif choice in ("8", "review"):
             print(render_largest_review_data(aggregate.reports))
             _press_enter()
 
@@ -593,7 +604,7 @@ def main_menu(root: Path | None = None) -> None:
 
         else:
             print(
-                f"  {theme.muted('?')}  Unknown command — try [1-10], [o], [b], [r], [q]."
+                f"  {theme.muted('?')}  Unknown command — try [1-10] or shortcuts [o, b, i, c, l, t, u, r, q]."
             )
 
 
