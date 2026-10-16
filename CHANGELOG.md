@@ -1,5 +1,18 @@
 # Changelog
 
+## [2.2.0](https://github.com/rhythwitty/bashiris/compare/v2.1.0...v2.2.0) (2026-10-16)
+
+
+### Features
+
+* add shell testing framework, update install fallback for python package, and add test workflow step ([7dd11ac](https://github.com/rhythwitty/bashiris/commit/7dd11ac96579ec54df91f9720ceac7fe88495eb4))
+* rename `setup-ssh` to `ssh-setup` ([2e2be02](https://github.com/rhythwitty/bashiris/commit/2e2be023ca837d36f26a3d8cbb7ed447483b849f))
+
+
+### Bug Fixes
+
+* disable=SC2059 to allow project-wide ANSI escape variable interpolation ([b644d56](https://github.com/rhythwitty/bashiris/commit/b644d56354d5c0338a599a7dda7e1d0d77743684))
+
 ## [2.1.0](https://github.com/rhythwitty/bashiris/compare/v2.0.2...v2.1.0) (2026-10-13)
 
 
