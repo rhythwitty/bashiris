@@ -1,5 +1,16 @@
 # Changelog
 
+## [3.0.0](https://github.com/rhythwitty/bashiris/compare/v2.2.0...v3.0.0) (2026-10-16)
+
+
+### ⚠ BREAKING CHANGES
+
+* update power-clean formatting
+
+### Features
+
+* update power-clean formatting ([00d8372](https://github.com/rhythwitty/bashiris/commit/00d837253e2b80aad41dcfeb3cc06d8fed720503))
+
 ## [2.2.0](https://github.com/rhythwitty/bashiris/compare/v2.1.0...v2.2.0) (2026-10-16)
 
 
