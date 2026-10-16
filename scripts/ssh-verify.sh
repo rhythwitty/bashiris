@@ -1,12 +1,12 @@
 #!/bin/bash
 
 # ─────────────────────────────────────────────
-#  verify-ssh — Verify GitHub SSH host aliases
+#  ssh-verify — Verify GitHub SSH host aliases
 #  https://github.com/rhythwitty/bashiris
 # ─────────────────────────────────────────────
 # IRIS_DESC: Verify GitHub SSH host aliases in ~/.ssh/config
 
-IRIS_SCRIPT_NAME="verify-ssh"
+IRIS_SCRIPT_NAME="ssh-verify"
 
 # ── Load shared library ───────────────────────────────────────────────────────
 _COMMON="$(dirname "${BASH_SOURCE[0]}")/lib/common.sh"
@@ -21,11 +21,11 @@ CONFIG_FILE="${HOME}/.ssh/config"
 
 # ── Help ──────────────────────────────────────────────────────────────────────
 show_help() {
-    render_help_banner "verify-ssh" "verify-ssh — help & usage"
+    render_help_banner "ssh-verify" "ssh-verify — help & usage"
 
     render_help_section "USAGE"
-    echo "    verify-ssh ${DIM}[OPTIONS]${RESET}"
-    echo "    iris verify-ssh ${DIM}[OPTIONS]${RESET}"
+    echo "    ssh-verify ${DIM}[OPTIONS]${RESET}"
+    echo "    iris ssh-verify ${DIM}[OPTIONS]${RESET}"
     echo ""
 
     render_help_section "DESCRIPTION"
@@ -39,8 +39,8 @@ show_help() {
     echo ""
 
     render_help_section "EXAMPLES"
-    echo "    ${DIM}verify-ssh${RESET}"
-    echo "    ${DIM}iris verify-ssh${RESET}"
+    echo "    ${DIM}ssh-verify${RESET}"
+    echo "    ${DIM}iris ssh-verify${RESET}"
     echo ""
 }
 
@@ -154,7 +154,7 @@ collect_hosts
 
 if [[ ${#HOSTS[@]} -eq 0 ]]; then
     log_err "No GitHub SSH hosts found in ${BOLD}${CONFIG_FILE}${RESET}"
-    log_detail "Run ${BOLD}setup-ssh${RESET} to generate and register a host alias." >&2
+    log_detail "Run ${BOLD}ssh-setup${RESET} to generate and register a host alias." >&2
     exit "$IRIS_EXIT_FAIL"
 fi
 
@@ -209,7 +209,7 @@ if [[ $FAILED -ne 0 ]]; then
     echo ""
     render_help_section "Next steps"
     echo ""
-    printf "  ${CYAN}•${RESET}  Re-run ${BOLD}iris setup-ssh${RESET} if the alias or key needs to be regenerated.\n"
+    printf "  ${CYAN}•${RESET}  Re-run ${BOLD}iris ssh-setup${RESET} if the alias or key needs to be regenerated.\n"
     printf "  ${CYAN}•${RESET}  Check that the matching public key is uploaded to GitHub for each host.\n"
     printf "  ${CYAN}•${RESET}  Confirm the network can reach ${BOLD}github.com${RESET} if you see timeouts.\n"
     echo ""

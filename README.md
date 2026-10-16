@@ -37,8 +37,8 @@ iris --update-deps    # update external dependencies for all scripts
 | `download-yt` | ✅ | ✅ | Download YouTube videos via `yt-dlp` |
 | `kill-port` | ✅ | ✅ | Kill the process running on a given port |
 | `power-clean` | ✅ | ✅ | Safe ChromePower storage analysis and cache cleanup |
-| `setup-ssh` | ✅ | ✅ | Generate SSH keys and configure GitHub access |
-| `verify-ssh` | ✅ | ✅ | Verify GitHub SSH host aliases from `~/.ssh/config` |
+| `ssh-setup` | ✅ | ✅ | Generate SSH keys and configure GitHub access |
+| `ssh-verify` | ✅ | ✅ | Verify GitHub SSH host aliases from `~/.ssh/config` |
 
 ## Adding a command
 

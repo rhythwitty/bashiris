@@ -1,12 +1,12 @@
 #!/bin/bash
 
 # ─────────────────────────────────────────────
-#  setup-ssh — Generate SSH keys and configure GitHub access
+#  ssh-setup — Generate SSH keys and configure GitHub access
 #  https://github.com/rhythwitty/bashiris
 # ─────────────────────────────────────────────
 # IRIS_DESC: Generate SSH keys and configure GitHub access
 
-IRIS_SCRIPT_NAME="setup-ssh"
+IRIS_SCRIPT_NAME="ssh-setup"
 
 # ── Load shared library ───────────────────────────────────────────────────────
 _COMMON="$(dirname "${BASH_SOURCE[0]}")/lib/common.sh"
@@ -24,11 +24,11 @@ SKIP_KEYGEN=false
 
 # ── Help ──────────────────────────────────────────────────────────────────────
 show_help() {
-    render_help_banner "setup-ssh" "setup-ssh — help & usage"
+    render_help_banner "ssh-setup" "ssh-setup — help & usage"
 
     render_help_section "USAGE"
-    echo "    setup-ssh ${DIM}[OPTIONS]${RESET}"
-    echo "    iris setup-ssh ${DIM}[OPTIONS]${RESET}"
+    echo "    ssh-setup ${DIM}[OPTIONS]${RESET}"
+    echo "    iris ssh-setup ${DIM}[OPTIONS]${RESET}"
     echo ""
 
     render_help_section "DESCRIPTION"
@@ -44,9 +44,9 @@ show_help() {
     echo ""
 
     render_help_section "EXAMPLES"
-    echo "    ${DIM}setup-ssh${RESET}"
-    echo "    ${DIM}setup-ssh --email you@example.com --user myhandle${RESET}"
-    echo "    ${DIM}iris setup-ssh${RESET}"
+    echo "    ${DIM}ssh-setup${RESET}"
+    echo "    ${DIM}ssh-setup --email you@example.com --user myhandle${RESET}"
+    echo "    ${DIM}iris ssh-setup${RESET}"
     echo ""
 }
 

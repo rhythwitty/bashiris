@@ -31,7 +31,7 @@ This project uses [Release Please](https://github.com/googleapis/release-please)
 
 ```bash
 git commit -m "fix: handle missing port argument in kill-port"
-git commit -m "feat: add verify-ssh command"
+git commit -m "feat: add ssh-verify command"
 git commit -m "feat!: redesign dispatcher output"
 ```
 
