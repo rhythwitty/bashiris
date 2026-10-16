@@ -25,8 +25,8 @@ SCRIPTS_COMMON=(
     download-yt
     kill-port
     power-clean
-    ssh/setup-ssh
-    ssh/verify-ssh
+    setup-ssh
+    verify-ssh
 )
 
 # macOS-only scripts

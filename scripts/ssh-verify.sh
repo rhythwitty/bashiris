@@ -9,8 +9,7 @@
 IRIS_SCRIPT_NAME="verify-ssh"
 
 # ── Load shared library ───────────────────────────────────────────────────────
-_COMMON="$(dirname "${BASH_SOURCE[0]}")/../../scripts/lib/common.sh"
-[[ -f "$_COMMON" ]] || _COMMON="$(dirname "${BASH_SOURCE[0]}")/../lib/common.sh"
+_COMMON="$(dirname "${BASH_SOURCE[0]}")/lib/common.sh"
 [[ -f "$_COMMON" ]] || _COMMON="${IRIS_LIB_DIR:-/usr/local/lib/iris}/lib/common.sh"
 # shellcheck source=scripts/lib/common.sh
 source "$_COMMON" || {

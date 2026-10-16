@@ -72,5 +72,5 @@ make check
 
 ## Documentation
 
-- [Development](./documentations/DEVELOPMENT.md) — Tooling, formatting, and linting setup.
-- [Releasing](./documentations/RELEASING.md) — Release workflow, versioning, and Conventional Commits.
+- [Development](./docs/DEVELOPMENT.md) — Tooling, formatting, and linting setup.
+- [Releasing](./docs/RELEASING.md) — Release workflow, versioning, and Conventional Commits.
