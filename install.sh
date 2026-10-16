@@ -135,13 +135,21 @@ fi
 
 # Install power_cleaner Python package (lives beside power-clean.sh in $IRIS_LIB)
 echo "  → power_cleaner (Python package)"
-if [[ -d "$SCRIPT_DIR/scripts/power_cleaner" ]]; then
+if [[ -d "$SCRIPT_DIR/src/power_cleaner" ]]; then
+    SOURCE_PKG="$SCRIPT_DIR/src/power_cleaner"
+elif [[ -d "$SCRIPT_DIR/scripts/power_cleaner" ]]; then
+    SOURCE_PKG="$SCRIPT_DIR/scripts/power_cleaner"
+else
+    SOURCE_PKG=""
+fi
+
+if [[ -n "$SOURCE_PKG" ]]; then
     if [[ "$IS_WINDOWS" == true ]]; then
         rm -rf "$IRIS_LIB/power_cleaner"
-        cp -R "$SCRIPT_DIR/scripts/power_cleaner" "$IRIS_LIB/power_cleaner"
+        cp -R "$SOURCE_PKG" "$IRIS_LIB/power_cleaner"
     else
         sudo rm -rf "$IRIS_LIB/power_cleaner"
-        sudo cp -R "$SCRIPT_DIR/scripts/power_cleaner" "$IRIS_LIB/power_cleaner"
+        sudo cp -R "$SOURCE_PKG" "$IRIS_LIB/power_cleaner"
     fi
 else
     echo "  ❌ power_cleaner package not found in repo — skipping"

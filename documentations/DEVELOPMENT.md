@@ -9,7 +9,7 @@ This project uses `shfmt` and `shellcheck` for shell scripts, and `ruff`, `pytes
 - **shellcheck**: Static analysis tool for shell scripts to catch bugs and portability issues.
 
 ### Python
-- **ruff**: Fast linter and code formatter for Python (`scripts/power_cleaner` and `tests`).
+- **ruff**: Fast linter and code formatter for Python (`src/power_cleaner` and `tests`).
 - **pytest** / **unittest**: Test runners for testing `power_cleaner` storage scanning and cleanup logic.
 - **uv**: Fast Python package and project manager.
 

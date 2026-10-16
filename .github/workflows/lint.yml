@@ -36,7 +36,7 @@ jobs:
       - name: Install dependencies
         run: uv sync
       - name: Lint with ruff
-        run: uv run ruff check scripts/power_cleaner tests
+        run: uv run ruff check src tests
       - name: Run tests
         run: uv run pytest
 

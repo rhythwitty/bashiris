@@ -81,7 +81,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 # Resolve the directory that contains the power_cleaner Python package.
 # After installation the package lives beside this script in $IRIS_LIB_DIR.
-# During development it lives in scripts/power_cleaner/ relative to the repo root.
+# During development it lives in src/power_cleaner/ relative to the repo root.
 find_package_dir() {
     # 1. Beside this script (installed location: $IRIS_LIB_DIR)
     if [[ -d "$SCRIPT_DIR/power_cleaner" ]]; then
@@ -89,7 +89,13 @@ find_package_dir() {
         return 0
     fi
 
-    # 2. Override via environment variable (directory containing power_cleaner/)
+    # 2. In repository src/ during development (relative to scripts/)
+    if [[ -d "$SCRIPT_DIR/../src/power_cleaner" ]]; then
+        (cd "$SCRIPT_DIR/../src" && pwd)
+        return 0
+    fi
+
+    # 3. Override via environment variable (directory containing power_cleaner/)
     if [[ -n "${CHROME_POWER_PYTHONPATH:-}" && -d "$CHROME_POWER_PYTHONPATH/power_cleaner" ]]; then
         echo "$CHROME_POWER_PYTHONPATH"
         return 0

@@ -19,7 +19,7 @@ dev = [
 ]
 
 [tool.hatch.build.targets.wheel]
-packages = ["scripts/power_cleaner"]
+packages = ["src/power_cleaner"]
 
 [tool.ruff]
 line-length = 88
@@ -31,5 +31,5 @@ ignore = ["E501"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
-pythonpath = ["scripts"]
+pythonpath = ["src"]
 
