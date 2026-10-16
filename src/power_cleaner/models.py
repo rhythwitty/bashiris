@@ -2,9 +2,17 @@
 
 from __future__ import annotations
 
+import sys
 from dataclasses import dataclass, field
-from enum import StrEnum
+from enum import Enum
 from pathlib import Path
+
+if sys.version_info >= (3, 11):
+    from enum import StrEnum
+else:
+    class StrEnum(str, Enum):
+        def __str__(self) -> str:
+            return str(self.value)
 
 
 class SafetyLevel(StrEnum):
