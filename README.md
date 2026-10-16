@@ -51,7 +51,7 @@ iris --update-deps    # update external dependencies for all scripts
 
 ### Commands with Python dependencies
 
-If a command wraps a Python package (like `power-clean`), place the package under `scripts/<package_name>/` and install it alongside the shell script in `install.sh`. The shell wrapper sets `PYTHONPATH` at runtime so no `pip install` is needed.
+If a command wraps a Python package (like `power-clean`), place the package under `src/<package_name>/` and install it alongside the shell script in `install.sh`. The shell wrapper sets `PYTHONPATH` at runtime so no `pip install` is needed.
 
 ## Development
 

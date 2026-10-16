@@ -23,6 +23,10 @@ jobs:
       - name: Lint check
         run: |
           find . -path './.git' -prune -o -type f \( -name '*.sh' -o -name 'iris' \) -print0 | xargs -0 shellcheck
+      - name: Shell tests
+        run: |
+          ./tests/shell/test_iris.sh
+
 
   python-check:
     runs-on: ubuntu-latest

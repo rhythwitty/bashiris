@@ -6,17 +6,16 @@
 # ─────────────────────────────────────────────
 # IRIS_DESC: Safe ChromePower storage analyzer and cache cleanup
 
-# ── Terminal color detection ──────────────────────────────────────────────────
-if [[ -t 1 ]] && command -v tput &> /dev/null && [[ -z "${NO_COLOR:-}" ]]; then
-    BOLD=$(tput bold 2> /dev/null || true)
-    RESET=$(tput sgr0 2> /dev/null || true)
-    CYAN=$(tput setaf 6 2> /dev/null || true)
-    GREEN=$(tput setaf 2 2> /dev/null || true)
-    RED=$(tput setaf 1 2> /dev/null || true)
-    DIM=$(tput dim 2> /dev/null || true)
-else
-    BOLD="" RESET="" CYAN="" GREEN="" RED="" DIM=""
-fi
+IRIS_SCRIPT_NAME="power-clean"
+
+# ── Load shared library ───────────────────────────────────────────────────────
+_COMMON="$(dirname "${BASH_SOURCE[0]}")/lib/common.sh"
+[[ -f "$_COMMON" ]] || _COMMON="${IRIS_LIB_DIR:-/usr/local/lib/iris}/lib/common.sh"
+# shellcheck source=scripts/lib/common.sh
+source "$_COMMON" || {
+    echo "⊘  Could not load iris common lib" >&2
+    exit 1
+}
 
 show_help() {
     cat << EOF
@@ -70,12 +69,8 @@ if ! command -v python3 &> /dev/null; then
     exit 1
 fi
 
-# Detect platform and library dir
-if [[ "$OSTYPE" == "msys" || "$OSTYPE" == "win32" || "$OSTYPE" == "cygwin" ]]; then
-    IRIS_LIB_DIR="$HOME/.local/lib/iris"
-else
-    IRIS_LIB_DIR="/usr/local/lib/iris"
-fi
+# Detect library dir
+IRIS_LIB_DIR="$(resolve_iris_lib_dir)"
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 

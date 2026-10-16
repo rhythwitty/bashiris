@@ -30,6 +30,7 @@ Run these commands from the root of the repository:
 make fmt        # Format all shell scripts
 make fmt-check  # Check shell script formatting
 make lint       # Run shellcheck linting
+make sh-test    # Run shell and CLI tests
 
 # Python
 make py-lint    # Run ruff lint checks
