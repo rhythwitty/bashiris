@@ -40,6 +40,65 @@ iris --update-deps    # update external dependencies for all scripts
 | `ssh-setup` | ✅ | ✅ | Generate SSH keys and configure GitHub access |
 | `ssh-verify` | ✅ | ✅ | Verify GitHub SSH host aliases from `~/.ssh/config` |
 
+### `power-clean`
+
+Safe storage analyzer and cache cleanup tool for ChromePower profiles (`~/Documents/ChromePowerCache/chrome`).
+
+#### Interactive Dashboard
+
+Run without arguments to launch the interactive terminal dashboard:
+
+```bash
+iris power-clean
+```
+
+The menu is grouped by intent and defaults to **Clean safe caches** (`[1]`), meaning simply pressing **Enter** triggers safe cleanup:
+
+```text
+  Actions:
+  Cleanup
+    [1] Clean safe caches (c) [Enter]        1.7 GB across 57 inactive profiles
+    [2] Clean low-risk caches (l)            8.6 GB (safe + rebuildable components)
+
+  Explore
+    [3] Browse & inspect browsers (b)        59 profiles (● 2 active)
+    [4] Top cleanup opportunities (t)        Ranked by reclaimable size
+
+  Audit
+    [5] Largest review data                  8.5 GB needing user decision
+    [6] Largest unknown items (u)            10.9 MB unclassified data
+
+  ────────────────────────────────────────────────────────────────────────
+  [r] Refresh scan                     [q] Quit
+```
+
+- **Default Action (`[Enter]` or `1` / `c`)**: Executes safe cache cleanup across all inactive browser profiles.
+- **Low-Risk Cleanup (`2` / `l`)**: Cleans component caches and ML model downloads that Chrome will automatically redownload when needed.
+- **Browse & Inspect (`3` / `b` / `i`)**: Interactive browser table with sorting and per-profile cache inspection. You can also type any profile name directly at the menu prompt to inspect it.
+- **Top Opportunities (`4` / `t`)**: Lists profiles with the largest reclaimable cache.
+- **Audit (`5` / `6` / `u`)**: Inspect review-tier data (cookies/storage) or unclassified directories.
+- **Controls (`r` / `q`)**: `r` rescans the root; `q` quits.
+
+#### Safety Tiers & Protections
+
+- **Active Process Protection**: Profiles currently opened in running Chrome instances are detected via process analysis & singleton locks and automatically skipped during cleanup.
+- **Safe**: Safe caches (HTTP cache, GPU cache, Code Cache, media caches) that can be cleared with zero risk.
+- **Low-Risk**: Rebuildable component downloads, model prediction data, and optimization guides.
+- **Review**: Site storage, IndexedDB, and cookies requiring manual inspection.
+- **Protected**: User credentials, login state, bookmarks, and preferences (never modified).
+
+#### CLI Options & Automation
+
+For non-interactive use or scheduled automation:
+
+```bash
+iris power-clean --dry-run                    # Preview cleanup actions without deleting
+iris power-clean --clean-safe -y              # Batch clean safe caches across inactive profiles
+iris power-clean --clean-low-risk -y          # Batch clean low-risk caches across inactive profiles
+iris power-clean --json                       # Output full scan analysis as structured JSON
+iris power-clean --root /path/to/chrome/cache # Specify custom ChromePower cache root
+```
+
 ## Adding a command
 
 1. Create `scripts/<name>.sh` (or `scripts/<subdir>/<name>.sh`).
