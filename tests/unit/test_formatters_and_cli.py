@@ -201,8 +201,9 @@ class TestFormattersAndCLI(unittest.TestCase):
         # 2. "no" (cancel confirmation in prompt_confirmation)
         # 3. "" (press Enter to acknowledge cancellation)
         # 4. "q" (exit main menu)
-        with patch("sys.stdout", buf), patch(
-            "builtins.input", side_effect=["", "no", "", "q"]
+        with (
+            patch("sys.stdout", buf),
+            patch("builtins.input", side_effect=["", "no", "", "q"]),
         ):
             from power_cleaner.cli import main_menu
 
@@ -223,6 +224,7 @@ class TestFormattersAndCLI(unittest.TestCase):
         buf = io.StringIO()
         with patch("sys.stdout", buf), patch("builtins.input", return_value="q"):
             from power_cleaner.cli import main_menu
+
             main_menu(root=fixture_root)
 
         output = buf.getvalue()

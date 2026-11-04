@@ -99,6 +99,20 @@ iris power-clean --json                       # Output full scan analysis as str
 iris power-clean --root /path/to/chrome/cache # Specify custom ChromePower cache root
 ```
 
+#### Local Testing (without system iris)
+
+During development or when testing changes without invoking the system-installed `/usr/local/lib/iris`:
+
+```bash
+# Using uv (runs local package via virtualenv entry point)
+uv run power-cleaner                     # Interactive dashboard
+uv run power-cleaner --dry-run           # Dry run
+uv run power-cleaner --clean-safe -y     # Batch safe clean
+
+# Or using the repository shell script directly
+./scripts/power-clean.sh --dry-run
+```
+
 ## Adding a command
 
 1. Create `scripts/<name>.sh` (or `scripts/<subdir>/<name>.sh`).
@@ -115,17 +129,21 @@ If a command wraps a Python package (like `power-clean`), place the package unde
 ## Development
 
 ```bash
+# Setup dependencies
+uv sync
+
+# Run power-cleaner locally
+uv run power-cleaner --dry-run
+
+# Run Python tests
+uv run pytest
+# or: make py-test
+
 # Shell formatting & linting
 make fmt-check
 make lint
 
-# Python linting (requires ruff: pip install ruff)
-make py-lint
-
-# Python tests
-make py-test
-
-# Run everything
+# Full test & lint check
 make check
 ```
 

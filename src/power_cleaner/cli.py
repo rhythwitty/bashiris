@@ -138,7 +138,9 @@ def handle_browser_inspection(
             else ("active" if report.status == BrowserStatus.ACTIVE else "none")
         )
         safe_label = theme.safe("Clean safe") if report.can_clean else "Clean safe"
-        safe_str = f"{theme.accent('[2]')} {safe_label} {theme.muted('(' + safe_note + ')')}"
+        safe_str = (
+            f"{theme.accent('[2]')} {safe_label} {theme.muted('(' + safe_note + ')')}"
+        )
 
         low_note = (
             format_size(report.low_risk_size)
@@ -150,18 +152,16 @@ def handle_browser_inspection(
             if report.can_clean_low_risk
             else "Clean low-risk"
         )
-        low_str = f"{theme.accent('[3]')} {low_label} {theme.muted('(' + low_note + ')')}"
+        low_str = (
+            f"{theme.accent('[3]')} {low_label} {theme.muted('(' + low_note + ')')}"
+        )
 
         print()
         print(
             f"  {theme.accent('[1]')} Refresh view                   {theme.accent('[4]')} Show review items"
         )
-        print(
-            f"  {safe_str:<38}  {theme.accent('[5]')} Explain classification (Why?)"
-        )
-        print(
-            f"  {low_str:<38}  {theme.accent('[6]')} Back {theme.muted('[Enter]')}"
-        )
+        print(f"  {safe_str:<38}  {theme.accent('[5]')} Explain classification (Why?)")
+        print(f"  {low_str:<38}  {theme.accent('[6]')} Back {theme.muted('[Enter]')}")
         print()
 
         choice = _prompt()
@@ -350,13 +350,19 @@ def _render_batch_summary_header(plan, title: str) -> None:
             bar = theme.safe("█" * bar_w) + theme.muted("░" * (10 - bar_w))
             pct = human_percent(bp.total_bytes, plan.total_bytes_to_clean)
             pct_str = theme.dim(f"({pad_left(pct, 5)})")
-            print(f"    {bp.report.name:<22}  {format_size(bp.total_bytes):>9}  {pct_str}  {bar}")
+            print(
+                f"    {bp.report.name:<22}  {format_size(bp.total_bytes):>9}  {pct_str}  {bar}"
+            )
 
     skipped = []
     if plan.skipped_active:
-        skipped.append(f"{theme.active('● ' + str(len(plan.skipped_active)) + ' active (skipped)')}")
+        skipped.append(
+            f"{theme.active('● ' + str(len(plan.skipped_active)) + ' active (skipped)')}"
+        )
     if plan.skipped_unknown:
-        skipped.append(f"{theme.review('◌ ' + str(len(plan.skipped_unknown)) + ' unknown (skipped)')}")
+        skipped.append(
+            f"{theme.review('◌ ' + str(len(plan.skipped_unknown)) + ' unknown (skipped)')}"
+        )
     if skipped:
         print(f"  {'  │  '.join(skipped)}")
 
@@ -372,7 +378,9 @@ def _render_cleanup_result(result) -> None:
     col1_left = theme.muted(pad_right("Deleted:", 9))
     col1_val = theme.safe(pad_right(del_str, 24))
 
-    skip_str = f"{result.skipped_active_count} active, {result.skipped_unknown_count} unknown"
+    skip_str = (
+        f"{result.skipped_active_count} active, {result.skipped_unknown_count} unknown"
+    )
     col2_left = theme.muted(pad_right("Skipped:", 9))
     col2_val = pad_right(skip_str, 20)
 
@@ -538,7 +546,9 @@ def main_menu(root: Path | None = None) -> None:
             if safe_cleanable
             else theme.dim("Clean safe caches")
         )
-        safe_inactive_plural = "profile" if aggregate.inactive_count == 1 else "profiles"
+        safe_inactive_plural = (
+            "profile" if aggregate.inactive_count == 1 else "profiles"
+        )
         safe_desc = (
             f"{format_size(aggregate.safe_size)} across {aggregate.inactive_count} inactive {safe_inactive_plural}"
             if safe_cleanable
