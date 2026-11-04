@@ -193,6 +193,43 @@ class TestFormattersAndCLI(unittest.TestCase):
             self.assertIn("Clean Low-Risk Caches — Summary", output)
             self.assertIn("Cleanup cancelled", output)
 
+    def test_main_menu_enter_defaults_to_safe_cleanup(self):
+        fixture_root = Path(__file__).parent / "fixtures" / "chrome_root"
+        buf = io.StringIO()
+        # Mock inputs:
+        # 1. "" (Enter for default safe cleanup)
+        # 2. "no" (cancel confirmation in prompt_confirmation)
+        # 3. "" (press Enter to acknowledge cancellation)
+        # 4. "q" (exit main menu)
+        with (
+            patch("sys.stdout", buf),
+            patch("builtins.input", side_effect=["", "no", "", "q"]),
+        ):
+            from power_cleaner.cli import main_menu
+
+            main_menu(root=fixture_root)
+
+        output = buf.getvalue()
+        self.assertIn("Clean Safe Caches — Summary", output)
+        self.assertIn("Cleanup", output)
+        self.assertIn("Explore", output)
+        self.assertIn("Audit", output)
+        self.assertIn("[1]", output)
+        self.assertIn("Clean safe caches", output)
+        self.assertIn("[q]", output)
+        self.assertIn("Quit", output)
+
+    def test_main_menu_quit_with_q(self):
+        fixture_root = Path(__file__).parent / "fixtures" / "chrome_root"
+        buf = io.StringIO()
+        with patch("sys.stdout", buf), patch("builtins.input", return_value="q"):
+            from power_cleaner.cli import main_menu
+
+            main_menu(root=fixture_root)
+
+        output = buf.getvalue()
+        self.assertIn("Bye.", output)
+
 
 if __name__ == "__main__":
     unittest.main()

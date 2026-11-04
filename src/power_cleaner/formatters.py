@@ -311,7 +311,9 @@ def render_overview(aggregate: AggregateReport) -> str:
     pct_rev = human_percent(aggregate.review_size, t)
 
     s_bar = render_mini_bar(aggregate.safe_size, t, width=8, color_fn=theme.safe)
-    l_bar = render_mini_bar(aggregate.low_risk_size, t, width=8, color_fn=theme.low_risk)
+    l_bar = render_mini_bar(
+        aggregate.low_risk_size, t, width=8, color_fn=theme.low_risk
+    )
     r_bar = render_mini_bar(aggregate.review_size, t, width=8, color_fn=theme.review)
 
     safe_lbl = theme.muted(pad_right("Safe:", 10))
@@ -338,9 +340,7 @@ def render_overview(aggregate: AggregateReport) -> str:
     lines.append(
         f"  {safe_lbl} {safe_val}  {s_bar} {safe_pct}   │   {prot_lbl} {prot_val}"
     )
-    lines.append(
-        f"  {low_lbl} {low_val}  {l_bar} {low_pct}   │   {unk_lbl} {unk_val}"
-    )
+    lines.append(f"  {low_lbl} {low_val}  {l_bar} {low_pct}   │   {unk_lbl} {unk_val}")
     lines.append(
         f"  {rev_lbl} {rev_val}  {r_bar} {rev_pct}   │   {inacc_lbl} {inacc_val}"
     )
@@ -525,9 +525,7 @@ def render_browser_details(report: BrowserReport) -> str:
     lines.append(
         f"  {safe_lbl} {safe_val}  {s_bar} {safe_pct}   │   {prot_lbl} {prot_val}"
     )
-    lines.append(
-        f"  {low_lbl} {low_val}  {l_bar} {low_pct}   │   {unk_lbl} {unk_val}"
-    )
+    lines.append(f"  {low_lbl} {low_val}  {l_bar} {low_pct}   │   {unk_lbl} {unk_val}")
     lines.append(
         f"  {rev_lbl} {rev_val}  {r_bar} {rev_pct}   │   {inacc_lbl} {inacc_val}"
     )
@@ -541,7 +539,9 @@ def render_browser_details(report: BrowserReport) -> str:
         lines.append(f"  {color_fn(title)}:")
         for it in sorted(items, key=lambda x: x.size, reverse=True):
             desc = f"  {theme.dim('— ' + it.description)}" if it.description else ""
-            lines.append(f"    {color_fn(format_size(it.size)):>10}  {it.relative_path}{desc}")
+            lines.append(
+                f"    {color_fn(format_size(it.size)):>10}  {it.relative_path}{desc}"
+            )
 
     render_section("SAFE TO CLEAN", report.safe_items, theme.safe)
     render_section("LOW RISK", report.low_risk_items, theme.low_risk)

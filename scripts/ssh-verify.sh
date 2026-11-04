@@ -17,7 +17,7 @@ source "$_COMMON" || {
     exit 1
 }
 
-CONFIG_FILE="${HOME}/.ssh/config"
+CONFIG_FILE="${IRIS_SSH_CONFIG:-$HOME/.ssh/config}"
 
 # ── Help ──────────────────────────────────────────────────────────────────────
 show_help() {
