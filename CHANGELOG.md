@@ -1,5 +1,13 @@
 # Changelog
 
+## [3.1.0](https://github.com/rhythwitty/bashiris/compare/v3.0.0...v3.1.0) (2026-11-04)
+
+
+### Features
+
+* add ssh-setup.sh --migrate to add port 443 to github block ([35ffc4d](https://github.com/rhythwitty/bashiris/commit/35ffc4da2425af6b60b89daedcceffd453812463))
+* re-design the power-clean menu ([88ca980](https://github.com/rhythwitty/bashiris/commit/88ca980007a41712aa113cb539a18ffb28ccf260))
+
 ## [3.0.0](https://github.com/rhythwitty/bashiris/compare/v2.2.0...v3.0.0) (2026-10-16)
 
 
