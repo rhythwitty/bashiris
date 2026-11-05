@@ -6,10 +6,16 @@
 # ─────────────────────────────────────────────
 
 # Detect platform and set library directory
-if [[ "$OSTYPE" == "msys" || "$OSTYPE" == "win32" || "$OSTYPE" == "cygwin" ]]; then
-    IRIS_LIB_DIR="$HOME/.local/lib/iris"
-else
-    IRIS_LIB_DIR="/usr/local/lib/iris"
+if [[ -z "${IRIS_LIB_DIR:-}" ]]; then
+    if [[ "$OSTYPE" == "msys" || "$OSTYPE" == "win32" || "$OSTYPE" == "cygwin" ]]; then
+        IRIS_LIB_DIR="$HOME/.local/lib/iris"
+    else
+        IRIS_LIB_DIR="/usr/local/lib/iris"
+    fi
+    # Fallback to local scripts/ directory when running from repository root if not installed
+    if [[ ! -d "$IRIS_LIB_DIR" && -d "$SCRIPT_DIR/scripts" ]]; then
+        IRIS_LIB_DIR="$SCRIPT_DIR/scripts"
+    fi
 fi
 
 IRIS_UPDATE_URL="https://github.com/rhythwitty/bashiris/raw/main/install.sh"
@@ -69,6 +75,12 @@ show_help() {
             desc=$(grep -m1 '^# IRIS_DESC:' "$script" | sed 's/^# IRIS_DESC: *//')
             printf "    %-20s %s\n" "$cmd" "${desc:----}"
         done
+        echo ""
+        echo "${bold}ALIASES${reset}"
+        [[ -f "$IRIS_LIB_DIR/check-power.sh" ]] && printf "    %-20s %s\n" "check" "Alias for check-power"
+        [[ -f "$IRIS_LIB_DIR/power-clean.sh" ]] && printf "    %-20s %s\n" "clean" "Alias for power-clean"
+        [[ -f "$IRIS_LIB_DIR/download-yt.sh" ]] && printf "    %-20s %s\n" "download" "Alias for download-yt"
+        [[ -f "$IRIS_LIB_DIR/kill-port.sh" ]] && printf "    %-20s %s\n" "kill" "Alias for kill-port"
     else
         echo "    (no commands installed — run install.sh)"
     fi
@@ -133,7 +145,14 @@ case "$1" in
         fi
         ;;
     *)
-        SCRIPT="$IRIS_LIB_DIR/$1.sh"
+        cmd="$1"
+        case "$cmd" in
+            clean) cmd="power-clean" ;;
+            kill) cmd="kill-port" ;;
+            download) cmd="download-yt" ;;
+            check) cmd="check-power" ;;
+        esac
+        SCRIPT="$IRIS_LIB_DIR/$cmd.sh"
         if [[ -x "$SCRIPT" ]]; then
             required_platform=$(grep -m1 '^# IRIS_PLATFORM:' "$SCRIPT" | sed 's/^# IRIS_PLATFORM: *//')
             if [[ -n "$required_platform" ]]; then

@@ -27,6 +27,7 @@ show_help() {
     render_help_section "USAGE"
     echo "    check-power ${DIM}[OPTIONS]${RESET}"
     echo "    iris check-power ${DIM}[OPTIONS]${RESET}"
+    echo "    iris check ${DIM}[OPTIONS]${RESET}"
     echo ""
 
     render_help_section "DESCRIPTION"

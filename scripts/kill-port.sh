@@ -29,6 +29,7 @@ show_help() {
     render_help_section "USAGE"
     echo "    kill-port <port_number> ${DIM}[OPTIONS]${RESET}"
     echo "    iris kill-port <port_number> ${DIM}[OPTIONS]${RESET}"
+    echo "    iris kill <port_number> ${DIM}[OPTIONS]${RESET}"
     echo ""
 
     render_help_section "DESCRIPTION"

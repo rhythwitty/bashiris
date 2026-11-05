@@ -23,6 +23,7 @@ ${BOLD}${CYAN}  ⚡ ChromePower Cleaner${RESET} ${DIM}— Safe storage analyzer 
 
 ${BOLD}USAGE${RESET}
     iris power-clean ${DIM}[OPTIONS]${RESET}    ${DIM}(default root: ~/Documents/ChromePowerCache/chrome)${RESET}
+    iris clean ${DIM}[OPTIONS]${RESET}
 
 ${BOLD}OPTIONS${RESET}
     ${CYAN}-h, --help${RESET}              Show this help message       ${CYAN}--clean-safe${RESET}            Batch clean safe caches

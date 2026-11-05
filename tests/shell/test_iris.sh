@@ -44,6 +44,11 @@ if echo "$output" | grep -q "USAGE"; then
 else
     fail "iris --help did not output USAGE"
 fi
+if echo "$output" | grep -q "ALIASES"; then
+    pass "iris --help outputs ALIASES section"
+else
+    fail "iris --help did not output ALIASES"
+fi
 
 # ── 2. Dispatcher --version ───────────────────────────────────────────────────
 if "$IRIS_BIN" --version 2>&1 | grep -qE '^iris v[0-9]+\.[0-9]+\.[0-9]+'; then
@@ -57,6 +62,35 @@ if "$IRIS_BIN" unknown_command_12345 &> /dev/null; then
     fail "iris unknown_command should exit with non-zero"
 else
     pass "iris unknown_command exits with non-zero exit code"
+fi
+
+# ── 3b. Dispatcher aliases ────────────────────────────────────────────────────
+clean_help="$(IRIS_LIB_DIR="$REPO_ROOT/scripts" "$IRIS_BIN" clean --help 2>&1 || true)"
+if echo "$clean_help" | grep -q "ChromePower Cleaner"; then
+    pass "iris clean dispatches to power-clean"
+else
+    fail "iris clean failed to dispatch to power-clean"
+fi
+
+kill_help="$(IRIS_LIB_DIR="$REPO_ROOT/scripts" "$IRIS_BIN" kill --help 2>&1 || true)"
+if echo "$kill_help" | grep -q "kill-port"; then
+    pass "iris kill dispatches to kill-port"
+else
+    fail "iris kill failed to dispatch to kill-port"
+fi
+
+download_help="$(IRIS_LIB_DIR="$REPO_ROOT/scripts" "$IRIS_BIN" download --help 2>&1 || true)"
+if echo "$download_help" | grep -q "download-yt"; then
+    pass "iris download dispatches to download-yt"
+else
+    fail "iris download failed to dispatch to download-yt"
+fi
+
+check_help="$(IRIS_LIB_DIR="$REPO_ROOT/scripts" "$IRIS_BIN" check --help 2>&1 || true)"
+if echo "$check_help" | grep -q "check-power"; then
+    pass "iris check dispatches to check-power"
+else
+    fail "iris check failed to dispatch to check-power"
 fi
 
 # ── 4. Shared common library tests ────────────────────────────────────────────

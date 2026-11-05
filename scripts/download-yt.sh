@@ -31,7 +31,10 @@ show_help() {
 
     render_help_section "USAGE"
     echo "    download-yt ${DIM}[OPTIONS]${RESET} ${BOLD}<URL>${RESET}"
+    echo "    iris download-yt ${DIM}[OPTIONS]${RESET} ${BOLD}<URL>${RESET}"
+    echo "    iris download ${DIM}[OPTIONS]${RESET} ${BOLD}<URL>${RESET}"
     echo "    download-yt --update-deps"
+    echo "    iris download --update-deps"
     echo ""
 
     render_help_section "DESCRIPTION"
