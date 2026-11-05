@@ -170,7 +170,11 @@ fi
 # ── Parse Video Resolutions ───────────────────────────────────────────────────
 # Extract lines that have an actual resolution (e.g. 1920x1080) but are video-only
 # or combined, and collect the height values, deduplicated and sorted descending.
-mapfile -t RESOLUTIONS < <(
+# Use while-read instead of mapfile for bash 3.2 compatibility (macOS default).
+RESOLUTIONS=()
+while IFS= read -r height; do
+    [[ -n "$height" ]] && RESOLUTIONS+=("$height")
+done < <(
     echo "$RAW_FORMATS" \
     | grep -E '[0-9]+x[0-9]+' \
     | grep -v 'audio only' \
@@ -225,27 +229,28 @@ else
 fi
 
 # ── Parse Audio Languages ─────────────────────────────────────────────────────
-# Match lines like: [en] English, [ja] 日本語 - original (original)
-# Capture both the lang code and the human-readable name.
-# We key on lines that contain "audio only" to avoid picking up subtitle tracks.
-declare -a LANG_CODES=()
-declare -a LANG_LABELS=()
+# Key on "audio only" lines that have a [lang-code] tag.
+# yt-dlp lists higher-bitrate (medium) entries before lower-bitrate (low), so
+# the first occurrence of each language code is the best quality — we keep that.
+LANG_CODES=()
+LANG_LABELS=()
 
 while IFS= read -r line; do
-    # Extract the bracketed language code, e.g. [en] or [es-419]
+    # Extract bracketed language code, e.g. [en] or [es-419]
     lang_code="$(echo "$line" | grep -oE '\[[a-zA-Z0-9_-]+\]' | head -1 | tr -d '[]')"
     [[ -z "$lang_code" ]] && continue
 
-    # Skip if already seen
+    # Skip duplicates (keep first / highest-quality occurrence)
     already=false
     for c in "${LANG_CODES[@]}"; do
         [[ "$c" == "$lang_code" ]] && already=true && break
     done
     $already && continue
 
-    # Build a readable label: strip the format ID prefix, extract everything after the lang tag
-    # e.g. "[en] English - dubbed" or "[ja] 日本語 - original (original)"
-    label="$(echo "$line" | grep -oE '\[[a-zA-Z0-9_-]+\].*$' | head -1)"
+    # Build a clean label: everything from the [lang] tag onward,
+    # stripped of trailing quality/format noise like ", low, m4a_dash"
+    raw_label="$(echo "$line" | grep -oE '\[[a-zA-Z0-9_-]+\].*$' | head -1)"
+    label="$(echo "$raw_label" | sed -E 's/, (low|medium|high),.*$//')"
 
     LANG_CODES+=("$lang_code")
     LANG_LABELS+=("$label")
