@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="public/logo.png" alt="iris logo" width="180">
+</p>
+
 # iris
 
 A unified CLI for utility scripts on macOS and Linux.
@@ -22,7 +26,7 @@ curl -sL https://github.com/rhythwitty/bashiris/raw/main/uninstall.sh | bash
 
 ```bash
 iris                  # list available commands
-iris <command> [args] # run a command
+iris <command> [args] # run a command (or use its alias)
 iris --version        # show the installed version
 iris --update         # compare the installed manifest with main and update if needed
 iris --upgrade        # alias for --update
@@ -31,16 +35,46 @@ iris --update-deps    # update external dependencies for all scripts
 
 ## Commands
 
-| Command | macOS | Linux | Description |
-|---|---|---|---|
-| `check-power` | ✅ | ❌ | Show power, sleep, and remote login config |
-| `download-yt` | ✅ | ✅ | Download YouTube videos via `yt-dlp` |
-| `kill-port` | ✅ | ✅ | Kill the process running on a given port |
-| `power-clean` | ✅ | ✅ | Safe ChromePower storage analysis and cache cleanup |
-| `ssh-setup` | ✅ | ✅ | Generate SSH keys and configure GitHub access |
-| `ssh-verify` | ✅ | ✅ | Verify GitHub SSH host aliases from `~/.ssh/config` |
+| Command | Alias | macOS | Linux | Description |
+|---|---|---|---|---|
+| `check-power` | `check` | ✅ | ❌ | Show power, sleep, and remote login config |
+| `download-yt` | `download` | ✅ | ✅ | Download YouTube videos via `yt-dlp` |
+| `kill-port` | `kill` | ✅ | ✅ | Kill the process running on a given port |
+| `power-clean` | `clean` | ✅ | ✅ | Safe ChromePower storage analysis and cache cleanup |
+| `ssh` | — | ✅ | ✅ | Generate SSH keys, configure and verify GitHub SSH access |
 
-### `power-clean`
+### `check-power` (alias: `check`)
+
+Show Mac power configuration, sleep settings, and remote login status (macOS only).
+
+```bash
+iris check                  # Show power and sleep config (or: iris check-power)
+iris check --no-sudo        # Skip remote login check (no sudo prompt)
+```
+
+### `download-yt` (alias: `download`)
+
+Download YouTube videos via `yt-dlp` in MP4 format (H.264 + AAC) with browser cookie support for authenticated or age-gated videos.
+
+```bash
+iris download 'https://youtube.com/watch?v=...'             # Download video (or: iris download-yt)
+iris download -b firefox 'https://youtube.com/watch?v=...'  # Use browser cookies (chrome, firefox, safari, etc.)
+iris download -r 720 'https://youtube.com/watch?v=...'      # Limit resolution (480, 720, 1080)
+iris download -p 'https://youtube.com/playlist?list=...'    # Download playlist
+iris download --update-deps                                 # Update yt-dlp dependency
+```
+
+### `kill-port` (alias: `kill`)
+
+Find and safely terminate process(es) listening on a specific port. Sends `SIGTERM` first, escalating to `SIGKILL` if the process survives.
+
+```bash
+iris kill 3000              # Terminate process on port 3000 (prompts for confirmation)
+iris kill 8080 --dry-run    # Preview matching process without killing
+iris kill 5432 -y           # Skip confirmation prompt
+```
+
+### `power-clean` (alias: `clean`)
 
 Safe storage analyzer and cache cleanup tool for ChromePower profiles (`~/Documents/ChromePowerCache/chrome`).
 
@@ -49,7 +83,7 @@ Safe storage analyzer and cache cleanup tool for ChromePower profiles (`~/Docume
 Run without arguments to launch the interactive terminal dashboard:
 
 ```bash
-iris power-clean
+iris clean                  # or: iris power-clean
 ```
 
 The menu is grouped by intent and defaults to **Clean safe caches** (`[1]`), meaning simply pressing **Enter** triggers safe cleanup:
@@ -92,11 +126,11 @@ The menu is grouped by intent and defaults to **Clean safe caches** (`[1]`), mea
 For non-interactive use or scheduled automation:
 
 ```bash
-iris power-clean --dry-run                    # Preview cleanup actions without deleting
-iris power-clean --clean-safe -y              # Batch clean safe caches across inactive profiles
-iris power-clean --clean-low-risk -y          # Batch clean low-risk caches across inactive profiles
-iris power-clean --json                       # Output full scan analysis as structured JSON
-iris power-clean --root /path/to/chrome/cache # Specify custom ChromePower cache root
+iris clean --dry-run                    # Preview cleanup actions without deleting (or: iris power-clean)
+iris clean --clean-safe -y              # Batch clean safe caches across inactive profiles
+iris clean --clean-low-risk -y          # Batch clean low-risk caches across inactive profiles
+iris clean --json                       # Output full scan analysis as structured JSON
+iris clean --root /path/to/chrome/cache # Specify custom ChromePower cache root
 ```
 
 #### Local Testing (without system iris)
@@ -111,6 +145,41 @@ uv run power-cleaner --clean-safe -y     # Batch safe clean
 
 # Or using the repository shell script directly
 ./scripts/power-clean.sh --dry-run
+```
+
+### `ssh`
+
+Generate ED25519 SSH keys, configure GitHub host aliases, and verify SSH connections.
+
+Run without arguments to launch the interactive menu:
+
+```bash
+iris ssh
+```
+
+```text
+  ⚡  iris ssh
+  ────────────────────────────────────────────────────────────────────────────
+
+  What would you like to do?
+
+  1  Setup   — Generate SSH key & configure GitHub host alias
+  2  Verify  — Test GitHub SSH host aliases
+  q  Quit
+
+  ?  Choice: 
+```
+
+Or invoke subcommands directly:
+
+```bash
+# Setup: generate key and configure ~/.ssh/config
+iris ssh setup
+iris ssh setup --email you@example.com --user myhandle
+iris ssh setup -y
+
+# Verify: test all GitHub SSH host aliases in ~/.ssh/config
+iris ssh verify
 ```
 
 ## Adding a command
