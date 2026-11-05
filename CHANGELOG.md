@@ -1,5 +1,20 @@
 # Changelog
 
+## [3.2.0](https://github.com/rhythwitty/bashiris/compare/v3.1.0...v3.2.0) (2026-11-05)
+
+
+### Features
+
+* fix ([6c7884e](https://github.com/rhythwitty/bashiris/commit/6c7884ed55bb67ed46d50e104425a00829774fd9))
+* fix shellcheck and ruff fix ([584ebb4](https://github.com/rhythwitty/bashiris/commit/584ebb465a9aa213c8a3f04d4ef2dabcb917c5fc))
+* merge the 2 ssh scripts ([00c742f](https://github.com/rhythwitty/bashiris/commit/00c742fac5d786519c58a5f1f7f3afff28cc8ed6))
+* support help flag for platform-restricted commands and add Python &lt;3.11 compatibility for StrEnum ([d20f4e3](https://github.com/rhythwitty/bashiris/commit/d20f4e3b4665614d18030e48b726885774f05c95))
+
+
+### Bug Fixes
+
+* yt-dlp --version ([96e0a4c](https://github.com/rhythwitty/bashiris/commit/96e0a4c6d326176ff4ef6cd1ea4c02a9357ece51))
+
 ## [3.1.0](https://github.com/rhythwitty/bashiris/compare/v3.0.0...v3.1.0) (2026-11-04)
 
 
