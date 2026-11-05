@@ -148,14 +148,14 @@ fi
 require_command yt-dlp "Install with: brew install yt-dlp  •  or run: download-yt --update-deps"
 
 # ── Version Freshness Check ───────────────────────────────────────────────────
-_YTDLP_VER="$(yt-dlp --version 2>/dev/null)"
+_YTDLP_VER="$(yt-dlp --version 2> /dev/null)"
 # yt-dlp versions are YYYY.MM.DD[.patch]; extract the date portion
 _YTDLP_DATE="$(echo "$_YTDLP_VER" | grep -oE '^[0-9]{4}\.[0-9]{2}\.[0-9]{2}')"
 if [[ -n "$_YTDLP_DATE" ]]; then
-    _VER_EPOCH=$(date -j -f "%Y.%m.%d" "$_YTDLP_DATE" "+%s" 2>/dev/null \
-              || date -d "${_YTDLP_DATE//./-}" "+%s" 2>/dev/null)
+    _VER_EPOCH=$(date -j -f "%Y.%m.%d" "$_YTDLP_DATE" "+%s" 2> /dev/null ||
+        date -d "${_YTDLP_DATE//./-}" "+%s" 2> /dev/null)
     _NOW_EPOCH=$(date "+%s")
-    _AGE_DAYS=$(( (_NOW_EPOCH - _VER_EPOCH) / 86400 ))
+    _AGE_DAYS=$(((_NOW_EPOCH - _VER_EPOCH) / 86400))
     if [[ "$_AGE_DAYS" -gt 60 ]]; then
         echo ""
         log_warn "yt-dlp version ${BOLD}${_YTDLP_VER}${RESET} is ${BOLD}${_AGE_DAYS} days old${RESET}."
@@ -165,9 +165,9 @@ if [[ -n "$_YTDLP_DATE" ]]; then
             read -r _UPGRADE_CHOICE
             if [[ -z "$_UPGRADE_CHOICE" || "$_UPGRADE_CHOICE" =~ ^[Yy] ]]; then
                 log_step "Upgrading yt-dlp…"
-                if command -v brew &>/dev/null && brew list yt-dlp &>/dev/null; then
+                if command -v brew &> /dev/null && brew list yt-dlp &> /dev/null; then
                     brew upgrade yt-dlp
-                elif command -v pip3 &>/dev/null && pip3 show yt-dlp &>/dev/null; then
+                elif command -v pip3 &> /dev/null && pip3 show yt-dlp &> /dev/null; then
                     pip3 install --upgrade yt-dlp
                 else
                     yt-dlp -U
@@ -219,9 +219,9 @@ if [[ -z "$BROWSER" ]]; then
             if [[ -z "$BROWSER_CHOICE" ]]; then
                 BROWSER="${BROWSER_KEYS[0]}"
                 break
-            elif [[ "$BROWSER_CHOICE" =~ ^[0-9]+$ ]] && \
-                 [[ "$BROWSER_CHOICE" -ge 1 ]] && \
-                 [[ "$BROWSER_CHOICE" -le "${#BROWSER_KEYS[@]}" ]]; then
+            elif [[ "$BROWSER_CHOICE" =~ ^[0-9]+$ ]] &&
+                [[ "$BROWSER_CHOICE" -ge 1 ]] &&
+                [[ "$BROWSER_CHOICE" -le "${#BROWSER_KEYS[@]}" ]]; then
                 BROWSER="${BROWSER_KEYS[$((BROWSER_CHOICE - 1))]}"
                 break
             fi
@@ -322,14 +322,14 @@ RESOLUTIONS=()
 while IFS= read -r height; do
     [[ -n "$height" ]] && RESOLUTIONS+=("$height")
 done < <(
-    echo "$RAW_FORMATS" \
-    | grep -E '[0-9]+x[0-9]+' \
-    | grep -v 'audio only' \
-    | grep -v 'storyboard' \
-    | grep -oE '[0-9]+x[0-9]+' \
-    | awk -F'x' '{print $2}' \
-    | sort -rn \
-    | uniq
+    echo "$RAW_FORMATS" |
+        grep -E '[0-9]+x[0-9]+' |
+        grep -v 'audio only' |
+        grep -v 'storyboard' |
+        grep -oE '[0-9]+x[0-9]+' |
+        awk -F'x' '{print $2}' |
+        sort -rn |
+        uniq
 )
 
 # Filter resolutions down to those ≤ MAX_RES
@@ -367,9 +367,9 @@ if [[ "${#FILTERED_RES[@]}" -gt 1 ]]; then
         if [[ -z "$RES_CHOICE" ]]; then
             CHOSEN_RES="${FILTERED_RES[0]}"
             break
-        elif [[ "$RES_CHOICE" =~ ^[0-9]+$ ]] && \
-           [[ "$RES_CHOICE" -ge 1 ]] && \
-           [[ "$RES_CHOICE" -le "${#FILTERED_RES[@]}" ]]; then
+        elif [[ "$RES_CHOICE" =~ ^[0-9]+$ ]] &&
+            [[ "$RES_CHOICE" -ge 1 ]] &&
+            [[ "$RES_CHOICE" -le "${#FILTERED_RES[@]}" ]]; then
             CHOSEN_RES="${FILTERED_RES[$((RES_CHOICE - 1))]}"
             break
         fi
@@ -432,9 +432,9 @@ if [[ "${#LANG_CODES[@]}" -gt 1 ]]; then
         if [[ -z "$LANG_CHOICE" ]]; then
             CHOSEN_LANG="${LANG_CODES[0]}"
             break
-        elif [[ "$LANG_CHOICE" =~ ^[0-9]+$ ]] && \
-           [[ "$LANG_CHOICE" -ge 1 ]] && \
-           [[ "$LANG_CHOICE" -le "${#LANG_CODES[@]}" ]]; then
+        elif [[ "$LANG_CHOICE" =~ ^[0-9]+$ ]] &&
+            [[ "$LANG_CHOICE" -ge 1 ]] &&
+            [[ "$LANG_CHOICE" -le "${#LANG_CODES[@]}" ]]; then
             CHOSEN_LANG="${LANG_CODES[$((LANG_CHOICE - 1))]}"
             break
         fi
