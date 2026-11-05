@@ -18,9 +18,8 @@ source "$_COMMON" || {
 }
 
 # ── Defaults ──────────────────────────────────────────────────────────────────
-DEFAULT_BROWSER="chrome"
 DEFAULT_MAX_RES="1080"
-BROWSER="$DEFAULT_BROWSER"
+BROWSER=""
 MAX_RES="$DEFAULT_MAX_RES"
 URL=""
 ALLOW_PLAYLIST=false
@@ -41,14 +40,14 @@ show_help() {
     echo "    ${DIM}Downloads YouTube videos via yt-dlp using browser cookies for"
     echo "    authenticated (age-gated / members-only) downloads."
     echo "    Output is always saved as MP4 (H.264 + AAC)."
-    echo "    When multiple resolutions or audio languages are available, you"
-    echo "    will be prompted to choose interactively."
+    echo "    Interactively prompts for browser, video resolution, and audio"
+    echo "    language when multiple choices are available."
     echo "    Use --update-deps to refresh yt-dlp when YouTube changes its player.${RESET}"
     echo ""
 
     render_help_section "OPTIONS"
-    render_help_option "-b, --browser <browser>" "Browser for cookies ${DIM}(default: ${DEFAULT_BROWSER})${RESET}"
-    render_help_option "" "                        ${DIM}Supported: chrome, firefox, safari, edge, brave, opera${RESET}"
+    render_help_option "-b, --browser <browser>" "Browser for cookies ${DIM}(prompted if omitted)${RESET}"
+    render_help_option "" "                        ${DIM}Supported: chrome, chrome-dev, safari, firefox, vivaldi, opera, opera-gx, brave, edge, none${RESET}"
     render_help_option "-r, --resolution <res>" "Max video resolution ${DIM}(default: ${DEFAULT_MAX_RES}p)${RESET}"
     render_help_option "" "                        ${DIM}Choices: 480, 720, 1080${RESET}"
     render_help_option "-p, --playlist" "Allow entire playlist download"
@@ -58,10 +57,10 @@ show_help() {
 
     render_help_section "EXAMPLES"
     echo "    ${DIM}download-yt 'https://youtube.com/watch?v=...'${RESET}"
+    echo "    ${DIM}download-yt -b chrome-dev 'https://youtube.com/watch?v=...'${RESET}"
     echo "    ${DIM}download-yt -b firefox 'https://youtube.com/watch?v=...'${RESET}"
     echo "    ${DIM}download-yt -r 720 'https://youtube.com/watch?v=...'${RESET}"
     echo "    ${DIM}download-yt -p 'https://youtube.com/playlist?list=...'${RESET}"
-    echo "    ${DIM}download-yt -b safari -r 480 'https://youtube.com/watch?v=...'${RESET}"
     echo ""
 
     render_help_section "TROUBLESHOOTING"
@@ -135,14 +134,16 @@ case "$MAX_RES" in
         ;;
 esac
 
-case "$BROWSER" in
-    chrome | firefox | safari | edge | brave | opera) ;;
-    *)
-        log_err "Unsupported browser: ${BOLD}${BROWSER}${RESET}."
-        log_detail "Supported: chrome, firefox, safari, edge, brave, opera" >&2
-        exit "$IRIS_EXIT_USAGE"
-        ;;
-esac
+if [[ -n "$BROWSER" ]]; then
+    case "$BROWSER" in
+        chrome | chrome-dev | safari | firefox | vivaldi | opera | opera-gx | brave | edge | none) ;;
+        *)
+            log_err "Unsupported browser: ${BOLD}${BROWSER}${RESET}."
+            log_detail "Supported: chrome, chrome-dev, safari, firefox, vivaldi, opera, opera-gx, brave, edge, none" >&2
+            exit "$IRIS_EXIT_USAGE"
+            ;;
+    esac
+fi
 
 require_command yt-dlp "Install with: brew install yt-dlp  •  or run: download-yt --update-deps"
 
@@ -157,9 +158,121 @@ if [[ "$ALLOW_PLAYLIST" == false ]]; then
     fi
 fi
 
+# ── Browser Selection ─────────────────────────────────────────────────────────
+if [[ -z "$BROWSER" ]]; then
+    if [[ ! -t 0 ]]; then
+        BROWSER="chrome"
+    else
+        BROWSER_KEYS=("chrome" "chrome-dev" "safari" "firefox" "vivaldi" "opera" "opera-gx" "brave" "edge" "none")
+        BROWSER_LABELS=("Chrome" "Chrome for Dev" "Safari" "Firefox" "Vivaldi" "Opera" "Opera GX" "Brave" "Microsoft Edge" "None (no cookies)")
+
+        echo ""
+        _rule CYAN
+        printf "  ${BOLD}Select browser for cookies${RESET}\n"
+        _rule CYAN
+        for i in "${!BROWSER_KEYS[@]}"; do
+            if [[ $i -eq 0 ]]; then
+                printf "  ${CYAN}%2d${RESET}  %s ${DIM}(default)${RESET}\n" "$((i + 1))" "${BROWSER_LABELS[$i]}"
+            else
+                printf "  ${CYAN}%2d${RESET}  %s\n" "$((i + 1))" "${BROWSER_LABELS[$i]}"
+            fi
+        done
+        _rule CYAN
+        echo ""
+        while true; do
+            printf "  ${BOLD}Enter choice [1–%d, default: 1]:${RESET} " "${#BROWSER_KEYS[@]}"
+            read -r BROWSER_CHOICE
+            if [[ -z "$BROWSER_CHOICE" ]]; then
+                BROWSER="${BROWSER_KEYS[0]}"
+                break
+            elif [[ "$BROWSER_CHOICE" =~ ^[0-9]+$ ]] && \
+                 [[ "$BROWSER_CHOICE" -ge 1 ]] && \
+                 [[ "$BROWSER_CHOICE" -le "${#BROWSER_KEYS[@]}" ]]; then
+                BROWSER="${BROWSER_KEYS[$((BROWSER_CHOICE - 1))]}"
+                break
+            fi
+            printf "  ${YELLOW}Invalid choice. Try again.${RESET}\n"
+        done
+    fi
+fi
+
+# ── Resolve Browser Cookie Arguments ──────────────────────────────────────────
+COOKIE_ARGS=()
+BROWSER_DISPLAY=""
+
+case "$BROWSER" in
+    chrome)
+        COOKIE_ARGS=(--cookies-from-browser "chrome")
+        BROWSER_DISPLAY="Chrome"
+        ;;
+    chrome-dev | "chrome for dev" | "chrome dev")
+        BROWSER_DISPLAY="Chrome for Dev"
+        if [[ "$OSTYPE" == "darwin"* ]]; then
+            dev_dir="$HOME/Library/Application Support/Google/Chrome Dev"
+            if [[ -d "$dev_dir" ]]; then
+                COOKIE_ARGS=(--cookies-from-browser "chrome:$dev_dir")
+            else
+                COOKIE_ARGS=(--cookies-from-browser "chrome")
+            fi
+        else
+            dev_dir="$HOME/.config/google-chrome-unstable"
+            if [[ -d "$dev_dir" ]]; then
+                COOKIE_ARGS=(--cookies-from-browser "chrome:$dev_dir")
+            else
+                COOKIE_ARGS=(--cookies-from-browser "chrome")
+            fi
+        fi
+        ;;
+    safari)
+        COOKIE_ARGS=(--cookies-from-browser "safari")
+        BROWSER_DISPLAY="Safari"
+        ;;
+    firefox)
+        COOKIE_ARGS=(--cookies-from-browser "firefox")
+        BROWSER_DISPLAY="Firefox"
+        ;;
+    vivaldi)
+        COOKIE_ARGS=(--cookies-from-browser "vivaldi")
+        BROWSER_DISPLAY="Vivaldi"
+        ;;
+    opera)
+        COOKIE_ARGS=(--cookies-from-browser "opera")
+        BROWSER_DISPLAY="Opera"
+        ;;
+    opera-gx | "opera gx")
+        BROWSER_DISPLAY="Opera GX"
+        if [[ "$OSTYPE" == "darwin"* ]]; then
+            gx_dir="$HOME/Library/Application Support/com.operasoftware.OperaGX"
+            if [[ -d "$gx_dir" ]]; then
+                COOKIE_ARGS=(--cookies-from-browser "opera:$gx_dir")
+            else
+                COOKIE_ARGS=(--cookies-from-browser "opera")
+            fi
+        else
+            COOKIE_ARGS=(--cookies-from-browser "opera")
+        fi
+        ;;
+    brave)
+        COOKIE_ARGS=(--cookies-from-browser "brave")
+        BROWSER_DISPLAY="Brave"
+        ;;
+    edge)
+        COOKIE_ARGS=(--cookies-from-browser "edge")
+        BROWSER_DISPLAY="Microsoft Edge"
+        ;;
+    none | false | off)
+        COOKIE_ARGS=()
+        BROWSER_DISPLAY="None (no cookies)"
+        ;;
+    *)
+        COOKIE_ARGS=(--cookies-from-browser "$BROWSER")
+        BROWSER_DISPLAY="$BROWSER"
+        ;;
+esac
+
 # ── Fetch Available Formats ───────────────────────────────────────────────────
 log_step "Fetching available formats…"
-RAW_FORMATS="$(yt-dlp --cookies-from-browser "$BROWSER" --list-formats "$URL" 2>&1)"
+RAW_FORMATS="$(yt-dlp ${COOKIE_ARGS[@]+"${COOKIE_ARGS[@]}"} --list-formats "$URL" 2>&1)"
 
 if [[ $? -ne 0 ]]; then
     log_err "Failed to fetch format list. Check the URL or run --update-deps."
@@ -206,14 +319,21 @@ if [[ "${#FILTERED_RES[@]}" -gt 1 ]]; then
     printf "  ${BOLD}Select video resolution${RESET}\n"
     _rule CYAN
     for i in "${!FILTERED_RES[@]}"; do
-        printf "  ${CYAN}%2d${RESET}  %sp\n" "$((i + 1))" "${FILTERED_RES[$i]}"
+        if [[ $i -eq 0 ]]; then
+            printf "  ${CYAN}%2d${RESET}  %sp ${DIM}(default)${RESET}\n" "$((i + 1))" "${FILTERED_RES[$i]}"
+        else
+            printf "  ${CYAN}%2d${RESET}  %sp\n" "$((i + 1))" "${FILTERED_RES[$i]}"
+        fi
     done
     _rule CYAN
     echo ""
     while true; do
-        printf "  ${BOLD}Enter choice [1–%d]:${RESET} " "${#FILTERED_RES[@]}"
+        printf "  ${BOLD}Enter choice [1–%d, default: 1]:${RESET} " "${#FILTERED_RES[@]}"
         read -r RES_CHOICE
-        if [[ "$RES_CHOICE" =~ ^[0-9]+$ ]] && \
+        if [[ -z "$RES_CHOICE" ]]; then
+            CHOSEN_RES="${FILTERED_RES[0]}"
+            break
+        elif [[ "$RES_CHOICE" =~ ^[0-9]+$ ]] && \
            [[ "$RES_CHOICE" -ge 1 ]] && \
            [[ "$RES_CHOICE" -le "${#FILTERED_RES[@]}" ]]; then
             CHOSEN_RES="${FILTERED_RES[$((RES_CHOICE - 1))]}"
@@ -264,14 +384,21 @@ if [[ "${#LANG_CODES[@]}" -gt 1 ]]; then
     printf "  ${BOLD}Select audio language${RESET}\n"
     _rule CYAN
     for i in "${!LANG_CODES[@]}"; do
-        printf "  ${CYAN}%2d${RESET}  %s\n" "$((i + 1))" "${LANG_LABELS[$i]}"
+        if [[ $i -eq 0 ]]; then
+            printf "  ${CYAN}%2d${RESET}  %s ${DIM}(default)${RESET}\n" "$((i + 1))" "${LANG_LABELS[$i]}"
+        else
+            printf "  ${CYAN}%2d${RESET}  %s\n" "$((i + 1))" "${LANG_LABELS[$i]}"
+        fi
     done
     _rule CYAN
     echo ""
     while true; do
-        printf "  ${BOLD}Enter choice [1–%d]:${RESET} " "${#LANG_CODES[@]}"
+        printf "  ${BOLD}Enter choice [1–%d, default: 1]:${RESET} " "${#LANG_CODES[@]}"
         read -r LANG_CHOICE
-        if [[ "$LANG_CHOICE" =~ ^[0-9]+$ ]] && \
+        if [[ -z "$LANG_CHOICE" ]]; then
+            CHOSEN_LANG="${LANG_CODES[0]}"
+            break
+        elif [[ "$LANG_CHOICE" =~ ^[0-9]+$ ]] && \
            [[ "$LANG_CHOICE" -ge 1 ]] && \
            [[ "$LANG_CHOICE" -le "${#LANG_CODES[@]}" ]]; then
             CHOSEN_LANG="${LANG_CODES[$((LANG_CHOICE - 1))]}"
@@ -300,7 +427,7 @@ _thick_rule CYAN
 printf "  ${BOLD}Download${RESET}\n"
 _rule CYAN
 printf "  ${DIM}%-14s${RESET}  %s\n" "URL" "$URL"
-printf "  ${DIM}%-14s${RESET}  ${CYAN}%s${RESET}\n" "Browser" "$BROWSER"
+printf "  ${DIM}%-14s${RESET}  ${CYAN}%s${RESET}\n" "Browser" "$BROWSER_DISPLAY"
 printf "  ${DIM}%-14s${RESET}  ${CYAN}%sp${RESET}\n" "Resolution" "$CHOSEN_RES"
 if [[ -n "$CHOSEN_LANG" ]]; then
     # Find the full label for display
@@ -325,7 +452,7 @@ PLAYLIST_FLAG="--no-playlist"
 [[ "$ALLOW_PLAYLIST" == true ]] && PLAYLIST_FLAG="--yes-playlist"
 
 yt-dlp \
-    --cookies-from-browser "$BROWSER" \
+    ${COOKIE_ARGS[@]+"${COOKIE_ARGS[@]}"} \
     -f "$FORMAT" \
     --merge-output-format mp4 \
     --extractor-args "youtubetab:skip=authcheck" \
