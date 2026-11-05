@@ -140,12 +140,14 @@ def create_cleanup_plan_for_browser(
 
 
 def create_low_risk_cleanup_plan_for_all(aggregate: AggregateReport) -> CleanupPlan:
-    """Generate a low-risk cache cleanup plan for all inactive profiles."""
-    return create_cleanup_plan_for_all(aggregate, safety_levels=(SafetyLevel.LOW_RISK,))
+    """Generate a cleanup plan for all inactive profiles covering safe + low-risk caches."""
+    return create_cleanup_plan_for_all(
+        aggregate, safety_levels=(SafetyLevel.SAFE, SafetyLevel.LOW_RISK)
+    )
 
 
 def create_low_risk_cleanup_plan_for_browser(report: BrowserReport) -> CleanupPlan:
-    """Generate a low-risk cache cleanup plan for a single browser profile."""
+    """Generate a cleanup plan for a single browser profile covering safe + low-risk caches."""
     return create_cleanup_plan_for_browser(
-        report, safety_levels=(SafetyLevel.LOW_RISK,)
+        report, safety_levels=(SafetyLevel.SAFE, SafetyLevel.LOW_RISK)
     )

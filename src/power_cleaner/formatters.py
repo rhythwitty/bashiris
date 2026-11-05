@@ -132,6 +132,13 @@ theme = ColorTheme()
 
 
 # ──────────────────────────────────────────────────────────────────────────────
+#  Layout
+# ──────────────────────────────────────────────────────────────────────────────
+
+TERM_WIDTH = 72  # Base column width for all rendered views
+
+
+# ──────────────────────────────────────────────────────────────────────────────
 #  Spinner (non-blocking, daemon thread)
 # ──────────────────────────────────────────────────────────────────────────────
 
@@ -182,7 +189,7 @@ class Spinner:
 def format_size(size: int) -> str:
     """Format bytes into a clean human-readable string."""
     units = ["B", "KB", "MB", "GB", "TB"]
-    value = float(size)
+    value = float(max(0, size))
     for unit in units:
         if value < 1024:
             if unit == "B":
@@ -279,7 +286,7 @@ def render_banner(version: str = "") -> str:
 
 def render_overview(aggregate: AggregateReport) -> str:
     """Render the compact, high-density ChromePower overview with precise column alignment."""
-    W = 72
+    W = TERM_WIDTH
 
     bar = render_storage_bar(aggregate, width=24)
     legend = (
@@ -408,7 +415,7 @@ def render_browser_table(
             key=lambda r: (r.status != BrowserStatus.ACTIVE, r.name.lower())
         )
 
-    W = 84
+    W = TERM_WIDTH + 12
     lines = [
         "",
         render_breadcrumb("Home", "Browsers"),
@@ -461,7 +468,7 @@ def render_browser_table(
 
 def render_browser_details(report: BrowserReport) -> str:
     """Render comprehensive inspection breakdown for a single browser."""
-    W = 72
+    W = TERM_WIDTH
 
     lines = [
         "",
@@ -562,7 +569,7 @@ def render_browser_details(report: BrowserReport) -> str:
 
 def render_why_explanation(item: StorageItem) -> str:
     """Render detailed explanation of why an item is classified."""
-    W = 62
+    W = TERM_WIDTH - 10
     lines = [
         "",
         render_breadcrumb("Home", "Explain"),
@@ -627,7 +634,7 @@ def render_largest_cleanup_opportunities(
     sorted_reports = [r for r in reports if r.safe_size > 0]
     sorted_reports.sort(key=lambda r: r.safe_size, reverse=True)
 
-    W = 80
+    W = TERM_WIDTH + 8
     lines = [
         "",
         render_breadcrumb("Home", "Cleanup Opportunities"),

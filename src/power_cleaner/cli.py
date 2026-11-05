@@ -174,18 +174,7 @@ def handle_browser_inspection(
 
         if choice == "2":
             if not report.can_clean:
-                if report.status == BrowserStatus.ACTIVE:
-                    print(
-                        f"\n  {theme.active('⊘ BLOCKED')} — Chrome is running with profile {theme.bold(report.name)}."
-                    )
-                elif report.status == BrowserStatus.UNKNOWN:
-                    print(
-                        f"\n  {theme.review('⊘ BLOCKED')} — Profile {theme.bold(report.name)} activity is unknown."
-                    )
-                else:
-                    print(
-                        f"\n  {theme.muted('Nothing safe to clean in this profile.')}"
-                    )
+                _print_blocked(report, "Nothing safe to clean in this profile.")
                 _press_enter()
                 continue
 
@@ -226,18 +215,7 @@ def handle_browser_inspection(
 
         if choice == "3":
             if not report.can_clean_low_risk:
-                if report.status == BrowserStatus.ACTIVE:
-                    print(
-                        f"\n  {theme.active('⊘ BLOCKED')} — Chrome is running with profile {theme.bold(report.name)}."
-                    )
-                elif report.status == BrowserStatus.UNKNOWN:
-                    print(
-                        f"\n  {theme.review('⊘ BLOCKED')} — Profile {theme.bold(report.name)} activity is unknown."
-                    )
-                else:
-                    print(
-                        f"\n  {theme.muted('Nothing low-risk to clean in this profile.')}"
-                    )
+                _print_blocked(report, "Nothing low-risk to clean in this profile.")
                 _press_enter()
                 continue
 
@@ -327,6 +305,22 @@ def _press_enter(label: str = "Press Enter to continue") -> None:
         input(f"\n  {arrow}  {theme.muted(label)}…  ")
     except (EOFError, KeyboardInterrupt):
         pass
+
+
+def _print_blocked(
+    report: "BrowserReport", nothing_label: str = "Nothing to clean in this profile."
+) -> None:
+    """Print a contextual blocked/unavailable message for a browser that cannot be cleaned."""
+    if report.status == BrowserStatus.ACTIVE:
+        print(
+            f"\n  {theme.active('⊘ BLOCKED')} — Chrome is running with profile {theme.bold(report.name)}."
+        )
+    elif report.status == BrowserStatus.UNKNOWN:
+        print(
+            f"\n  {theme.review('⊘ BLOCKED')} — Profile {theme.bold(report.name)} activity is unknown."
+        )
+    else:
+        print(f"\n  {theme.muted(nothing_label)}")
 
 
 def _render_batch_summary_header(plan, title: str) -> None:

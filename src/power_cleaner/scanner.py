@@ -266,11 +266,12 @@ class ProfileScanner:
         # Fetch process list ONCE for the entire batch
         processes = get_system_processes()
 
+        # Resolve the canonical root before scanning so AggregateReport always
+        # reflects the actual directory that was searched.
+        search_root = get_chrome_root(root)
+
         reports: list[BrowserReport] = []
         for browser in browsers:
             reports.append(self.scan_browser(browser, force=force, processes=processes))
 
-        search_root = root or (
-            Path(browsers[0].parent) if browsers else get_chrome_root()
-        )
         return AggregateReport(root=search_root, reports=reports)
