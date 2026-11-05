@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="public/logo.png" alt="iris logo" width="180">
+  <img src="public/long.jpg" alt="iris logo" width="180">
 </p>
 
 # Bash Iris
