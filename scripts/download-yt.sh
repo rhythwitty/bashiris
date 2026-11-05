@@ -147,6 +147,40 @@ fi
 
 require_command yt-dlp "Install with: brew install yt-dlp  •  or run: download-yt --update-deps"
 
+# ── Version Freshness Check ───────────────────────────────────────────────────
+_YTDLP_VER="$(yt-dlp --version 2>/dev/null)"
+# yt-dlp versions are YYYY.MM.DD[.patch]; extract the date portion
+_YTDLP_DATE="$(echo "$_YTDLP_VER" | grep -oE '^[0-9]{4}\.[0-9]{2}\.[0-9]{2}')"
+if [[ -n "$_YTDLP_DATE" ]]; then
+    _VER_EPOCH=$(date -j -f "%Y.%m.%d" "$_YTDLP_DATE" "+%s" 2>/dev/null \
+              || date -d "${_YTDLP_DATE//./-}" "+%s" 2>/dev/null)
+    _NOW_EPOCH=$(date "+%s")
+    _AGE_DAYS=$(( (_NOW_EPOCH - _VER_EPOCH) / 86400 ))
+    if [[ "$_AGE_DAYS" -gt 60 ]]; then
+        echo ""
+        log_warn "yt-dlp version ${BOLD}${_YTDLP_VER}${RESET} is ${BOLD}${_AGE_DAYS} days old${RESET}."
+        log_detail "An outdated yt-dlp is the most common cause of download failures."
+        if [[ -t 0 ]]; then
+            printf "  ${BOLD}Upgrade now? [Y/n]:${RESET} "
+            read -r _UPGRADE_CHOICE
+            if [[ -z "$_UPGRADE_CHOICE" || "$_UPGRADE_CHOICE" =~ ^[Yy] ]]; then
+                log_step "Upgrading yt-dlp…"
+                if command -v brew &>/dev/null && brew list yt-dlp &>/dev/null; then
+                    brew upgrade yt-dlp
+                elif command -v pip3 &>/dev/null && pip3 show yt-dlp &>/dev/null; then
+                    pip3 install --upgrade yt-dlp
+                else
+                    yt-dlp -U
+                fi
+                log_success "yt-dlp upgraded to $(yt-dlp --version)."
+            fi
+        else
+            log_detail "Run: ${BOLD}download-yt --update-deps${RESET}"
+        fi
+        echo ""
+    fi
+fi
+
 # ── Strip Playlist Params (when playlist disabled) ────────────────────────────
 if [[ "$ALLOW_PLAYLIST" == false ]]; then
     if [[ "$URL" == *"youtube.com"* ]] || [[ "$URL" == *"youtu.be"* ]]; then
