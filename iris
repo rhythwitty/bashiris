@@ -5,6 +5,10 @@
 #  https://github.com/rhythwitty/bashiris
 # ─────────────────────────────────────────────
 
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+IRIS_UPDATE_URL="https://github.com/rhythwitty/bashiris/raw/main/install.sh"
+IRIS_MANIFEST_URL="https://github.com/rhythwitty/bashiris/raw/main/.release-please-manifest.json"
+
 # Detect platform and set library directory
 if [[ -z "${IRIS_LIB_DIR:-}" ]]; then
     if [[ "$OSTYPE" == "msys" || "$OSTYPE" == "win32" || "$OSTYPE" == "cygwin" ]]; then
@@ -17,10 +21,6 @@ if [[ -z "${IRIS_LIB_DIR:-}" ]]; then
         IRIS_LIB_DIR="$SCRIPT_DIR/scripts"
     fi
 fi
-
-IRIS_UPDATE_URL="https://github.com/rhythwitty/bashiris/raw/main/install.sh"
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-IRIS_MANIFEST_URL="https://github.com/rhythwitty/bashiris/raw/main/.release-please-manifest.json"
 
 read_version_from_manifest() {
     local manifest_path="$1"
@@ -158,6 +158,12 @@ case "$1" in
             if [[ -n "$required_platform" ]]; then
                 current_platform=$(uname -s | tr '[:upper:]' '[:lower:]' | sed 's/darwin/macos/')
                 if [[ "$current_platform" != "$required_platform" ]]; then
+                    for arg in "${@:2}"; do
+                        if [[ "$arg" == "-h" || "$arg" == "--help" ]]; then
+                            shift
+                            exec "$SCRIPT" "$@"
+                        fi
+                    done
                     echo "❌  '$1' is only supported on $required_platform."
                     exit 1
                 fi
