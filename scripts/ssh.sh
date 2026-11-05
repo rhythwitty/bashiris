@@ -37,10 +37,10 @@ show_help() {
     echo ""
 
     render_help_section "SETUP OPTIONS"
-    render_help_option "-h, --help"        "Show this help message"
-    render_help_option "--email <email>"   "Email for SSH key comment (skips prompt)"
+    render_help_option "-h, --help" "Show this help message"
+    render_help_option "--email <email>" "Email for SSH key comment (skips prompt)"
     render_help_option "--user <username>" "SSH username / GitHub handle (skips prompt)"
-    render_help_option "-y, --yes"         "Skip confirmation prompts"
+    render_help_option "-y, --yes" "Skip confirmation prompts"
     echo ""
 
     render_help_section "VERIFY OPTIONS"
@@ -73,8 +73,8 @@ show_menu() {
     echo ""
 
     case "$MENU_CHOICE" in
-        1 | setup)   run_setup   ;;
-        2 | verify)  run_verify  ;;
+        1 | setup) run_setup ;;
+        2 | verify) run_verify ;;
         q | Q | quit | exit) exit 0 ;;
         *)
             log_err "Unknown choice: ${BOLD}${MENU_CHOICE}${RESET}"
@@ -312,23 +312,23 @@ classify_output() {
 
 status_label() {
     case "$1" in
-        ok)               printf "${GREEN}PASS${RESET}" ;;
+        ok) printf "${GREEN}PASS${RESET}" ;;
         permission_denied) printf "${RED}KEY FAIL${RESET}" ;;
-        timeout)          printf "${YELLOW}TIMEOUT${RESET}" ;;
-        dns)              printf "${YELLOW}DNS FAIL${RESET}" ;;
-        network)          printf "${YELLOW}NETWORK${RESET}" ;;
-        *)                printf "${RED}FAIL${RESET}" ;;
+        timeout) printf "${YELLOW}TIMEOUT${RESET}" ;;
+        dns) printf "${YELLOW}DNS FAIL${RESET}" ;;
+        network) printf "${YELLOW}NETWORK${RESET}" ;;
+        *) printf "${RED}FAIL${RESET}" ;;
     esac
 }
 
 reason_text() {
     case "$1" in
-        ok)               printf "Authenticated" ;;
+        ok) printf "Authenticated" ;;
         permission_denied) printf "Permission denied (publickey)" ;;
-        timeout)          printf "Operation timed out" ;;
-        dns)              printf "Hostname resolution failed" ;;
-        network)          printf "Network connectivity failed" ;;
-        *)                printf "Unexpected SSH response" ;;
+        timeout) printf "Operation timed out" ;;
+        dns) printf "Hostname resolution failed" ;;
+        network) printf "Network connectivity failed" ;;
+        *) printf "Unexpected SSH response" ;;
     esac
 }
 
@@ -444,7 +444,7 @@ SUBCOMMAND="${1:-}"
 [[ -n "$SUBCOMMAND" ]] && shift
 
 case "$SUBCOMMAND" in
-    "" )
+    "")
         show_menu
         ;;
     setup)

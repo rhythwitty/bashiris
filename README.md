@@ -37,8 +37,7 @@ iris --update-deps    # update external dependencies for all scripts
 | `download-yt` | ✅ | ✅ | Download YouTube videos via `yt-dlp` |
 | `kill-port` | ✅ | ✅ | Kill the process running on a given port |
 | `power-clean` | ✅ | ✅ | Safe ChromePower storage analysis and cache cleanup |
-| `ssh-setup` | ✅ | ✅ | Generate SSH keys and configure GitHub access |
-| `ssh-verify` | ✅ | ✅ | Verify GitHub SSH host aliases from `~/.ssh/config` |
+| `ssh` | ✅ | ✅ | Generate SSH keys, configure and verify GitHub SSH access |
 
 ### `power-clean`
 
@@ -111,6 +110,41 @@ uv run power-cleaner --clean-safe -y     # Batch safe clean
 
 # Or using the repository shell script directly
 ./scripts/power-clean.sh --dry-run
+```
+
+### `ssh`
+
+Generate ED25519 SSH keys, configure GitHub host aliases, and verify SSH connections.
+
+Run without arguments to launch the interactive menu:
+
+```bash
+iris ssh
+```
+
+```text
+  ⚡  iris ssh
+  ────────────────────────────────────────────────────────────────────────────
+
+  What would you like to do?
+
+  1  Setup   — Generate SSH key & configure GitHub host alias
+  2  Verify  — Test GitHub SSH host aliases
+  q  Quit
+
+  ?  Choice: 
+```
+
+Or invoke subcommands directly:
+
+```bash
+# Setup: generate key and configure ~/.ssh/config
+iris ssh setup
+iris ssh setup --email you@example.com --user myhandle
+iris ssh setup -y
+
+# Verify: test all GitHub SSH host aliases in ~/.ssh/config
+iris ssh verify
 ```
 
 ## Adding a command

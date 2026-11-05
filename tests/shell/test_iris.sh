@@ -82,70 +82,39 @@ else
     fail "require_min_bash 3 failed"
 fi
 
-# ── 5. ssh-setup --help option test ──────────────────────────────────────────
-ssh_setup_help="$("$REPO_ROOT/scripts/ssh-setup.sh" --help 2>&1 || true)"
-if echo "$ssh_setup_help" | grep -q -- "--migrate"; then
-    pass "ssh-setup --help lists --migrate option"
+# ── 5. ssh command tests ─────────────────────────────────────────────────────
+ssh_help="$("$REPO_ROOT/scripts/ssh.sh" --help 2>&1 || true)"
+if echo "$ssh_help" | grep -q "setup" && echo "$ssh_help" | grep -q "verify"; then
+    pass "ssh --help lists setup and verify subcommands"
 else
-    fail "ssh-setup --help missing --migrate option"
+    fail "ssh --help missing subcommands"
 fi
 
-# ── 6. ssh-setup migration test ──────────────────────────────────────────────
+# Ensure --migrate is no longer present in help
+if ! echo "$ssh_help" | grep -q -- "--migrate"; then
+    pass "ssh --help does not contain removed --migrate option"
+else
+    fail "ssh --help unexpectedly contains removed --migrate option"
+fi
+
+# Test unknown subcommand handling
+if "$REPO_ROOT/scripts/ssh.sh" invalid_subcmd &> /dev/null; then
+    fail "ssh invalid_subcmd should exit with non-zero"
+else
+    pass "ssh invalid_subcmd exits with non-zero exit code"
+fi
+
+# ── 6. ssh verify test with temporary config ──────────────────────────────────
 TEST_TMP_DIR="$(mktemp -d)"
 TEST_SSH_CONFIG="$TEST_TMP_DIR/config"
+touch "$TEST_SSH_CONFIG"
 
-cat << 'EOF' > "$TEST_SSH_CONFIG"
-Host 10.9.8.1
-  HostName 10.9.8.1
-  User mac
-
-Host github_rhythwitty
-  HostName github.com
-  IdentityFile ~/.ssh/id_ed25519_rhythwitty
-  User git
-  IdentitiesOnly yes
-
-Host github_already_migrated
-  HostName ssh.github.com
-  IdentityFile ~/.ssh/id_ed25519_already
-  Port 443
-  User git
-  IdentitiesOnly yes
-EOF
-
-# Run migration with auto-confirm
-IRIS_SSH_CONFIG="$TEST_SSH_CONFIG" FORCE_YES=true "$REPO_ROOT/scripts/ssh-setup.sh" --migrate > /dev/null 2>&1
-
-# Verify github_rhythwitty was migrated to port 443 & ssh.github.com
-if grep -A 5 "Host github_rhythwitty" "$TEST_SSH_CONFIG" | grep -q "HostName ssh.github.com" &&
-    grep -A 5 "Host github_rhythwitty" "$TEST_SSH_CONFIG" | grep -q "Port 443"; then
-    pass "ssh-setup --migrate updated github_rhythwitty to ssh.github.com and Port 443"
+# Verify on empty config should fail with no hosts found message
+verify_output="$(IRIS_SSH_CONFIG="$TEST_SSH_CONFIG" "$REPO_ROOT/scripts/ssh.sh" verify 2>&1 || true)"
+if echo "$verify_output" | grep -q "No GitHub SSH hosts found"; then
+    pass "ssh verify reports no GitHub hosts found on empty config"
 else
-    fail "ssh-setup --migrate failed to update github_rhythwitty"
-fi
-
-# Verify non-github host was preserved
-if grep -A 2 "Host 10.9.8.1" "$TEST_SSH_CONFIG" | grep -q "HostName 10.9.8.1" &&
-    ! grep -A 2 "Host 10.9.8.1" "$TEST_SSH_CONFIG" | grep -q "Port 443"; then
-    pass "ssh-setup --migrate preserved non-github host unchanged"
-else
-    fail "ssh-setup --migrate corrupted non-github host"
-fi
-
-# Verify already migrated host did not get duplicate Port 443
-port_count="$(grep -A 6 "Host github_already_migrated" "$TEST_SSH_CONFIG" | grep -c "Port 443" || true)"
-if [[ "$port_count" -eq 1 ]]; then
-    pass "ssh-setup --migrate did not duplicate Port 443"
-else
-    fail "ssh-setup --migrate duplicated Port 443 (found $port_count occurrences)"
-fi
-
-# Verify idempotency
-migration_output="$(IRIS_SSH_CONFIG="$TEST_SSH_CONFIG" FORCE_YES=true "$REPO_ROOT/scripts/ssh-setup.sh" --migrate 2>&1 || true)"
-if echo "$migration_output" | grep -q "already use port 443"; then
-    pass "ssh-setup --migrate is idempotent when all hosts are migrated"
-else
-    fail "ssh-setup --migrate failed idempotency check"
+    fail "ssh verify did not report missing GitHub hosts"
 fi
 
 rm -rf "$TEST_TMP_DIR"
