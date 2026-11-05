@@ -308,7 +308,7 @@ def _press_enter(label: str = "Press Enter to continue") -> None:
 
 
 def _print_blocked(
-    report: "BrowserReport", nothing_label: str = "Nothing to clean in this profile."
+    report: BrowserReport, nothing_label: str = "Nothing to clean in this profile."
 ) -> None:
     """Print a contextual blocked/unavailable message for a browser that cannot be cleaned."""
     if report.status == BrowserStatus.ACTIVE:
