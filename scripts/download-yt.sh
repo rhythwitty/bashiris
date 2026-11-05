@@ -306,9 +306,7 @@ esac
 
 # ── Fetch Available Formats ───────────────────────────────────────────────────
 log_step "Fetching available formats…"
-RAW_FORMATS="$(yt-dlp ${COOKIE_ARGS[@]+"${COOKIE_ARGS[@]}"} --list-formats "$URL" 2>&1)"
-
-if [[ $? -ne 0 ]]; then
+if ! RAW_FORMATS="$(yt-dlp ${COOKIE_ARGS[@]+"${COOKIE_ARGS[@]}"} --list-formats "$URL" 2>&1)"; then
     log_err "Failed to fetch format list. Check the URL or run --update-deps."
     echo "$RAW_FORMATS" >&2
     exit "$IRIS_EXIT_FAIL"
