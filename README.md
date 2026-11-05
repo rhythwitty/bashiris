@@ -2,7 +2,7 @@
   <img src="public/logo.png" alt="iris logo" width="180">
 </p>
 
-# iris
+# Bash Iris
 
 A unified CLI for utility scripts on macOS and Linux.
 
