@@ -954,11 +954,16 @@ class RuleRegistry:
             return self._rules[norm]
 
         # 2. SQLite sidecar matches (e.g. "Default/History-wal" -> "Default/History")
+        # Only strip the suffix from the final path component (the filename) so that
+        # a mid-path occurrence like "Default/Some-shm-wal" is never mis-classified.
+        norm_parts = norm.rsplit("/", 1)
+        filename = norm_parts[-1]
+        parent_prefix = (norm_parts[0] + "/") if len(norm_parts) == 2 else ""
         for suffix in ("-wal", "-journal", "-shm"):
-            if norm.endswith(suffix):
-                base = norm[: -len(suffix)]
-                if base in self._rules:
-                    return self._rules[base]
+            if filename.endswith(suffix):
+                base_path = parent_prefix + filename[: -len(suffix)]
+                if base_path in self._rules:
+                    return self._rules[base_path]
 
         # 3. Directory ancestor matching: longest matching prefix wins
         parts = norm.split("/")
