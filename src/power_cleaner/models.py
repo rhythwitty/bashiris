@@ -16,7 +16,6 @@ else:
             return str(self.value)
 
 
-
 class SafetyLevel(StrEnum):
     SAFE = "SAFE"
     LOW_RISK = "LOW_RISK"

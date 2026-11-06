@@ -416,10 +416,11 @@ if [[ "${#LANG_CODES[@]}" -gt 1 ]]; then
     printf "  ${BOLD}Select audio language${RESET}\n"
     _rule CYAN
     for i in "${!LANG_CODES[@]}"; do
-        if [[ $i -eq 0 ]]; then
-            printf "  ${CYAN}%2d${RESET}  %s ${DIM}(default)${RESET}\n" "$((i + 1))" "${LANG_LABELS[$i]}"
+        _label="${LANG_LABELS[$i]}"
+        if [[ $i -eq 0 ]] && [[ "$_label" != *"(default)"* ]]; then
+            printf "  ${CYAN}%2d${RESET}  %s ${DIM}(default)${RESET}\n" "$((i + 1))" "$_label"
         else
-            printf "  ${CYAN}%2d${RESET}  %s\n" "$((i + 1))" "${LANG_LABELS[$i]}"
+            printf "  ${CYAN}%2d${RESET}  %s\n" "$((i + 1))" "$_label"
         fi
     done
     _rule CYAN
@@ -438,9 +439,25 @@ if [[ "${#LANG_CODES[@]}" -gt 1 ]]; then
         fi
         printf "  ${YELLOW}Invalid choice. Try again.${RESET}\n"
     done
+
+    # ── Subtitle Download Prompt (multi-locale only) ───────────────────────────
+    DOWNLOAD_SUBS=true
+    if [[ -t 0 ]]; then
+        echo ""
+        printf "  ${BOLD}Download subtitle file for ${CYAN}%s${RESET}${BOLD}? [Y/n]:${RESET} " "$CHOSEN_LANG"
+        read -r _SUB_CHOICE
+        if [[ "$_SUB_CHOICE" =~ ^[Nn] ]]; then
+            DOWNLOAD_SUBS=false
+        fi
+    fi
 elif [[ "${#LANG_CODES[@]}" -eq 1 ]]; then
     CHOSEN_LANG="${LANG_CODES[0]}"
 fi
+
+# ── Subtitle Download Default (single-locale or no locale) ───────────────────
+# DOWNLOAD_SUBS is only set inside the multi-locale block above; default to false
+# for single-locale / no-locale cases (no prompt needed).
+DOWNLOAD_SUBS="${DOWNLOAD_SUBS:-false}"
 
 # ── Build Format String ───────────────────────────────────────────────────────
 # If a specific language was chosen, prefer audio streams tagged with that code.
@@ -471,6 +488,12 @@ if [[ -n "$CHOSEN_LANG" ]]; then
         fi
     done
     printf "  ${DIM}%-14s${RESET}  ${CYAN}%s${RESET}\n" "Audio" "$LANG_DISPLAY"
+    # Subtitles row (only shown when the multi-locale subtitle prompt was asked)
+    if [[ "$DOWNLOAD_SUBS" == true ]]; then
+        printf "  ${DIM}%-14s${RESET}  ${GREEN}yes (%s)${RESET}\n" "Subtitles" "$CHOSEN_LANG"
+    else
+        printf "  ${DIM}%-14s${RESET}  ${DIM}no${RESET}\n" "Subtitles"
+    fi
 fi
 if [[ "$ALLOW_PLAYLIST" == true ]]; then
     printf "  ${DIM}%-14s${RESET}  ${GREEN}enabled${RESET}\n" "Playlist"
@@ -480,13 +503,51 @@ fi
 _rule CYAN
 echo ""
 
+# ── Proceed with video download? ──────────────────────────────────────────────
+DOWNLOAD_VIDEO=true
+if [[ -t 0 ]]; then
+    printf "  ${BOLD}Proceed with video download? [Y/n]:${RESET} "
+    read -r _DL_CHOICE
+    if [[ "$_DL_CHOICE" =~ ^[Nn] ]]; then
+        DOWNLOAD_VIDEO=false
+    fi
+fi
+
+if [[ "$DOWNLOAD_VIDEO" == false && "$DOWNLOAD_SUBS" == false ]]; then
+    log_info "Nothing to download. Exiting."
+    exit "$IRIS_EXIT_OK"
+fi
+
+if [[ "$DOWNLOAD_VIDEO" == false ]]; then
+    log_info "Skipping video download."
+fi
+echo ""
+
 PLAYLIST_FLAG="--no-playlist"
 [[ "$ALLOW_PLAYLIST" == true ]] && PLAYLIST_FLAG="--yes-playlist"
 
+# ── Build Subtitle Args ───────────────────────────────────────────────────────
+SUB_ARGS=()
+if [[ "$DOWNLOAD_SUBS" == true && -n "$CHOSEN_LANG" ]]; then
+    SUB_ARGS=(--write-subs --write-auto-subs --sub-langs "$CHOSEN_LANG")
+fi
+
+# ── Build Format / Skip-Download Args ────────────────────────────────────────
+# In subtitle-only mode omit -f / --merge-output-format to avoid triggering
+# unnecessary player and format resolution; --skip-download still downloads subs.
+FORMAT_ARGS=()
+SKIP_DL_FLAG=()
+if [[ "$DOWNLOAD_VIDEO" == false ]]; then
+    SKIP_DL_FLAG=(--skip-download)
+else
+    FORMAT_ARGS=(-f "$FORMAT" --merge-output-format mp4)
+fi
+
 yt-dlp \
     ${COOKIE_ARGS[@]+"${COOKIE_ARGS[@]}"} \
-    -f "$FORMAT" \
-    --merge-output-format mp4 \
+    ${FORMAT_ARGS[@]+"${FORMAT_ARGS[@]}"} \
     --extractor-args "youtubetab:skip=authcheck" \
     $PLAYLIST_FLAG \
+    ${SUB_ARGS[@]+"${SUB_ARGS[@]}"} \
+    ${SKIP_DL_FLAG[@]+"${SKIP_DL_FLAG[@]}"} \
     "$URL"
