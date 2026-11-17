@@ -1,5 +1,13 @@
 # Changelog
 
+## [3.3.0](https://github.com/rhythwitty/bashiris/compare/v3.2.0...v3.3.0) (2026-11-17)
+
+
+### Features
+
+* try release again ([ed174fe](https://github.com/rhythwitty/bashiris/commit/ed174fee122d1fad1806bc723d5a7fa192b16f63))
+* try release again ([1c68620](https://github.com/rhythwitty/bashiris/commit/1c68620fb45a98f65915b302c13ad0a8e0bea9e1))
+
 ## [3.2.0](https://github.com/rhythwitty/bashiris/compare/v3.1.0...v3.2.0) (2026-11-05)
 
 
